@@ -4,7 +4,7 @@ import {
   Home, Award, Calendar, Clock, CheckCircle, Circle,
   RotateCcw, ArrowRight, AlertCircle, HelpCircle, Zap,
   Star, Lock, Unlock, PlusCircle, Vibrate, Headphones,
-  Volume1, VolumeX, Ear, Info
+  Volume1, VolumeX, Ear, Info, MessageCircle, Lightbulb
 } from 'lucide-react';
 
 // Create context for global state
@@ -22,12 +22,20 @@ const morseCodeMap = {
   'C': '-.-.', '1': '.----', 'D': '-..', '6': '-....', '0': '-----', 'X': '-..-'
 };
 
-// LCWO.net character progression
-const characterProgression = [
+// LCWO.net character progression (Koch method)
+const kochMethodProgression = [
   'K', 'M', 'U', 'R', 'E', 'S', 'N', 'A', 'P', 'T', 
   'L', 'W', 'I', '.', 'J', 'Z', '=', 'F', 'O', 'Y', 
   ',', 'V', 'G', '5', '/', 'Q', '9', '2', 'H', '3', 
   '8', 'B', '?', '4', '7', 'C', '1', 'D', '6', '0', 'X'
+];
+
+// Logical learning path progression
+const logicalMethodProgression = [
+  'T', 'E', 'A', 'N', 'I', 'M', 'S', 'O', 'R', 'K',
+  'L', 'U', 'D', 'G', 'F', 'Y', 'C', 'Q', 'B', 'X',
+  'Z', 'H', '1', '2', '3', '4', '5', '6', '7', '8',
+  '9', '0'
 ];
 
 // Helper function to get standardized display version of morse code
@@ -36,38 +44,41 @@ const getDisplayMorse = (char) => {
 };
 
 // Group characters into logical families based on Koch method pedagogy
-const patternFamilies = [];
-const familySize = 5; // Number of characters per family
+const generatePatternFamilies = (progression) => {
+  const patternFamilies = [];
+  const familySize = 5; // Number of characters per family
 
-// Create pattern families from the character progression
-for (let i = 0; i < characterProgression.length; i += familySize) {
-  const familyChars = characterProgression.slice(i, i + familySize);
-  patternFamilies.push({
-    name: `Group ${Math.floor(i/familySize) + 1}`,
-    description: `Characters ${i+1}-${Math.min(i+familySize, characterProgression.length)}`,
-    characters: familyChars.map(char => ({
-      char,
-      morse: getDisplayMorse(char),
-      audio: `/${char.toLowerCase()}-sound.mp3`,
-      pattern: morseCodeMap[char].replace(/\./g, 'short').replace(/\-/g, 'long').split('').join('-')
-    }))
-  });
-}
+  // Create pattern families from the character progression
+  for (let i = 0; i < progression.length; i += familySize) {
+    const familyChars = progression.slice(i, i + familySize);
+    patternFamilies.push({
+      name: `Group ${Math.floor(i/familySize) + 1}`,
+      description: `Characters ${i+1}-${Math.min(i+familySize, progression.length)}`,
+      characters: familyChars.map(char => ({
+        char,
+        morse: getDisplayMorse(char),
+        audio: `/${char.toLowerCase()}-sound.mp3`,
+        pattern: morseCodeMap[char].replace(/\./g, 'short').replace(/\-/g, 'long').split('').join('-')
+      }))
+    });
+  }
+  return patternFamilies;
+};
 
 // Generate daily lessons dynamically based on the character progression
-const generateDailyLessons = () => {
+const generateDailyLessons = (progression, learningMethod) => {
   const lessons = [];
   
   // Day 1: Introduction and first character
   lessons.push({
     day: 1,
-    title: `Introduction to Morse & Letter ${characterProgression[0]}`,
-    description: `Learn the basics of Morse code and your first letter: ${characterProgression[0]} (${getDisplayMorse(characterProgression[0])})`,
+    title: `Introduction to Morse & Letter ${progression[0]}`,
+    description: `Learn the basics of Morse code and your first letter: ${progression[0]} (${getDisplayMorse(progression[0])})`,
     duration: 15,
     exercises: [
       {
         type: "intro",
-        title: "Welcome to Morse for AuDHD",
+        title: `Welcome to Morse for AuDHD (${learningMethod} Method)`,
         content: "Today we'll learn about Morse code and master your first character. Morse code uses dots and dashes to represent letters and numbers. We'll focus on training your ear to recognize these patterns.",
         duration: 2
       },
@@ -79,28 +90,28 @@ const generateDailyLessons = () => {
       },
       {
         type: "character",
-        char: characterProgression[0],
-        morse: getDisplayMorse(characterProgression[0]),
-        mnemonic: `${characterProgression[0]} sounds like '${morseCodeMap[characterProgression[0]].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
+        char: progression[0],
+        morse: getDisplayMorse(progression[0]),
+        mnemonic: `${progression[0]} sounds like '${morseCodeMap[progression[0]].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
         duration: 3
       },
       {
         type: "flashPractice",
-        char: characterProgression[0],
+        char: progression[0],
         reps: 10,
         interval: 3,
         duration: 3
       },
       {
         type: "comprehension",
-        chars: [characterProgression[0]],
+        chars: [progression[0]],
         sets: 5,
         duration: 4
       },
       {
         type: "reward",
         title: "First Letter Unlocked!",
-        content: `You've learned your first Morse code character: ${characterProgression[0]}`,
+        content: `You've learned your first Morse code character: ${progression[0]}`,
         points: 10,
         badge: "first_letter",
         duration: 1
@@ -108,7 +119,7 @@ const generateDailyLessons = () => {
       {
         type: "audio_recognition",
         title: "Sound Recognition Training",
-        content: `Close your eyes and focus on the sound of ${characterProgression[0]}. Listen for its distinctive pattern.`,
+        content: `Close your eyes and focus on the sound of ${progression[0]}. Listen for its distinctive pattern.`,
         duration: 1
       }
     ],
@@ -116,10 +127,25 @@ const generateDailyLessons = () => {
   });
   
   // For each subsequent character, create a lesson
-  for (let i = 1; i < characterProgression.length; i++) {
-    const currentChar = characterProgression[i];
-    const previousChars = characterProgression.slice(0, i);
-    const lastChar = previousChars[previousChars.length - 1];
+  for (let i = 1; i < progression.length; i++) {
+    let currentChar;
+    let previousChars;
+    let lastChar;
+    let title;
+    
+    // For logical method, group characters in pairs after the first one
+    if (learningMethod === 'Logical' && i % 2 === 1 && i+1 < progression.length) {
+      currentChar = [progression[i], progression[i+1]];
+      previousChars = progression.slice(0, i);
+      lastChar = previousChars[previousChars.length - 1];
+      title = `Letters ${progression[i]} & ${progression[i+1]}`;
+      i++; // Skip the next character as we've included it in this lesson
+    } else {
+      currentChar = progression[i];
+      previousChars = progression.slice(0, i);
+      lastChar = previousChars[previousChars.length - 1];
+      title = `Letter ${currentChar} & Practice`;
+    }
     
     const exercises = [];
     
@@ -131,36 +157,71 @@ const generateDailyLessons = () => {
       duration: 2
     });
     
-    // Introduce new character
-    exercises.push({
-      type: "character",
-      char: currentChar,
-      morse: getDisplayMorse(currentChar),
-      mnemonic: `${currentChar} sounds like '${morseCodeMap[currentChar].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
-      duration: 3
-    });
-    
-    // Flash practice with new character
-    exercises.push({
-      type: "flashPractice",
-      char: currentChar,
-      reps: 10,
-      interval: 3,
-      duration: 3
-    });
-    
-    // Contrast practice with new and previously learned characters
-    exercises.push({
-      type: "contrastPractice",
-      chars: [currentChar, lastChar],
-      sets: 5,
-      duration: 3
-    });
+    // Introduce new character(s)
+    if (Array.isArray(currentChar)) {
+      // For paired characters in logical method
+      currentChar.forEach(char => {
+        exercises.push({
+          type: "character",
+          char: char,
+          morse: getDisplayMorse(char),
+          mnemonic: `${char} sounds like '${morseCodeMap[char].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
+          duration: 3
+        });
+      });
+      
+      // Flash practice with new characters
+      exercises.push({
+        type: "flashPractice",
+        chars: currentChar,
+        reps: 10,
+        interval: 3,
+        duration: 3
+      });
+      
+      // Contrast practice with new and previously learned characters
+      exercises.push({
+        type: "contrastPractice",
+        chars: [...currentChar, lastChar],
+        sets: 5,
+        duration: 3
+      });
+    } else {
+      // Single character introduction (Koch method style)
+      exercises.push({
+        type: "character",
+        char: currentChar,
+        morse: getDisplayMorse(currentChar),
+        mnemonic: `${currentChar} sounds like '${morseCodeMap[currentChar].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
+        duration: 3
+      });
+      
+      // Flash practice with new character
+      exercises.push({
+        type: "flashPractice",
+        char: currentChar,
+        reps: 10,
+        interval: 3,
+        duration: 3
+      });
+      
+      // Contrast practice with new and previously learned characters
+      exercises.push({
+        type: "contrastPractice",
+        chars: [currentChar, lastChar],
+        sets: 5,
+        duration: 3
+      });
+    }
     
     // Multi-character practice with all learned characters
+    const allChars = Array.isArray(currentChar) 
+      ? [...previousChars, ...currentChar] 
+      : [...previousChars, currentChar];
+    
     exercises.push({
       type: "multiCharPractice",
-      chars: [...previousChars, currentChar],
+      chars: allChars,
       sets: 3,
       duration: 3
     });
@@ -168,17 +229,25 @@ const generateDailyLessons = () => {
     // Reward
     exercises.push({
       type: "reward",
-      title: `Character ${i+1} Mastered!`,
-      content: `You've learned ${currentChar} and can now recognize ${i+1} Morse code characters!`,
+      title: Array.isArray(currentChar) 
+        ? `Characters ${i-currentChar.length+1}-${i} Mastered!` 
+        : `Character ${i+1} Mastered!`,
+      content: Array.isArray(currentChar)
+        ? `You've learned ${currentChar.join(' and ')} and can now recognize ${i+1} Morse code characters!`
+        : `You've learned ${currentChar} and can now recognize ${i+1} Morse code characters!`,
       points: 10 + i,
-      badge: `character_${i+1}`,
+      badge: Array.isArray(currentChar) 
+        ? `characters_${i-currentChar.length+1}_to_${i}` 
+        : `character_${i+1}`,
       duration: 1
     });
     
     lessons.push({
       day: i + 1,
-      title: `Letter ${currentChar} & Practice`,
-      description: `Learn ${currentChar} (${getDisplayMorse(currentChar)}) and practice with previously learned characters`,
+      title: title,
+      description: Array.isArray(currentChar)
+        ? `Learn ${currentChar[0]} (${getDisplayMorse(currentChar[0])}) and ${currentChar[1]} (${getDisplayMorse(currentChar[1])}) and practice with previously learned characters`
+        : `Learn ${currentChar} (${getDisplayMorse(currentChar)}) and practice with previously learned characters`,
       duration: 15,
       exercises,
       totalPoints: 20 + i
@@ -187,8 +256,6 @@ const generateDailyLessons = () => {
   
   return lessons;
 };
-
-const dailyLessons = generateDailyLessons();
 
 // State reducer for character mastery
 const characterMasteryReducer = (state, action) => {
@@ -213,15 +280,17 @@ const characterMasteryReducer = (state, action) => {
       };
     case 'LOAD_STATE':
       return action.state;
+    case 'RESET_MASTERY':
+      return action.initialState;
     default:
       return state;
   }
 };
 
 // Initialize character mastery state based on the progression
-const initCharacterMastery = () => {
+const initCharacterMastery = (progression) => {
   const initialState = {};
-  characterProgression.forEach(char => {
+  progression.forEach(char => {
     initialState[char] = { introduced: false, correct: 0, attempts: 0, mastery: 0 };
   });
   return initialState;
@@ -244,6 +313,9 @@ const preferencesReducer = (state, action) => {
 
 // Main App Component
 const MorseCodeApp = () => {
+  // Path selection state
+  const [showPathSelection, setShowPathSelection] = useState(false);
+  
   // Main state
   const [currentTab, setCurrentTab] = useState('home');
   const [currentDay, setCurrentDay] = useState(1);
@@ -255,10 +327,10 @@ const MorseCodeApp = () => {
   const [sessionProgress, setSessionProgress] = useState(0);
   const [points, setPoints] = useState(0);
   const [rewards, setRewards] = useState([]);
+  const [microBurstActive, setMicroBurstActive] = useState(false);
+  const [microBurstChar, setMicroBurstChar] = useState('');
   
   // Complex state with reducers
-  const [characterMastery, dispatchMastery] = useReducer(characterMasteryReducer, initCharacterMastery());
-  
   const [preferences, dispatchPreferences] = useReducer(preferencesReducer, {
     colorMode: 'dark',
     soundPitch: 600,
@@ -269,7 +341,28 @@ const MorseCodeApp = () => {
     charSpeed: 20, // Character speed in WPM (fixed for Koch method)
     effectiveSpeed: 15, // Effective speed in WPM (adjustable for Farnsworth timing)
     reinforcementStyle: 'points',
+    learningMethod: 'Logical', // Default to Logical method
   });
+  
+  // Determine which character progression to use based on user preference
+  const characterProgression = preferences.learningMethod === 'Koch' 
+    ? kochMethodProgression 
+    : logicalMethodProgression;
+  
+  // Generate lessons based on selected method
+  const [dailyLessons, setDailyLessons] = useState(
+    generateDailyLessons(characterProgression, preferences.learningMethod)
+  );
+  
+  const [characterMastery, dispatchMastery] = useReducer(
+    characterMasteryReducer, 
+    initCharacterMastery(characterProgression)
+  );
+  
+  // Pattern families based on current progression
+  const [patternFamilies, setPatternFamilies] = useState(
+    generatePatternFamilies(characterProgression)
+  );
   
   // Refs for audio context, oscillator, and exercise intervals
   const audioContext = useRef(null);
@@ -277,6 +370,7 @@ const MorseCodeApp = () => {
   const gainNode = useRef(null);
   const timerRef = useRef(null);
   const exerciseIntervalRef = useRef(null);
+  const microBurstIntervalRef = useRef(null);
   
   // ARIA live region ref for accessibility
   const ariaLiveRef = useRef(null);
@@ -292,6 +386,9 @@ const MorseCodeApp = () => {
       const savedPreferences = localStorage.getItem('preferences');
       if (savedPreferences) {
         dispatchPreferences({ type: 'LOAD_PREFERENCES', preferences: JSON.parse(savedPreferences) });
+      } else {
+        // If no preferences are saved, show path selection on first load
+        setShowPathSelection(true);
       }
       
       const savedDay = localStorage.getItem('currentDay');
@@ -323,6 +420,26 @@ const MorseCodeApp = () => {
     }
   }, []);
   
+  // Update daily lessons when learning method changes
+  useEffect(() => {
+    // Generate lessons based on the selected method
+    const newLessons = generateDailyLessons(characterProgression, preferences.learningMethod);
+    setDailyLessons(newLessons);
+    
+    // Update pattern families based on the current progression
+    const newPatternFamilies = generatePatternFamilies(characterProgression);
+    setPatternFamilies(newPatternFamilies);
+    
+    // Reset mastery when switching methods if necessary
+    if (Object.keys(characterMastery).some(char => !characterProgression.includes(char))) {
+      const newMasteryState = initCharacterMastery(characterProgression);
+      dispatchMastery({ 
+        type: 'RESET_MASTERY', 
+        initialState: newMasteryState
+      });
+    }
+  }, [preferences.learningMethod, characterProgression]);
+  
   // Save state to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('characterMastery', JSON.stringify(characterMastery));
@@ -353,6 +470,26 @@ const MorseCodeApp = () => {
   useEffect(() => {
     localStorage.setItem('rewards', JSON.stringify(rewards));
   }, [rewards]);
+  
+  // Clean up timers when the component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up all intervals/timeouts to prevent memory leaks
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (exerciseIntervalRef.current) clearInterval(exerciseIntervalRef.current);
+      if (microBurstIntervalRef.current) clearInterval(microBurstIntervalRef.current);
+      
+      // Stop and disconnect oscillator if it exists
+      if (oscillator.current) {
+        try {
+          oscillator.current.stop();
+          oscillator.current.disconnect();
+        } catch (e) {
+          // Ignore errors if oscillator was already stopped
+        }
+      }
+    };
+  }, []);
   
   // Initialize Audio context only when needed (on first user interaction)
   // This addresses autoplay policy restrictions in modern browsers
@@ -401,6 +538,10 @@ const MorseCodeApp = () => {
       
       if (exerciseIntervalRef.current) {
         clearInterval(exerciseIntervalRef.current);
+      }
+      
+      if (microBurstIntervalRef.current) {
+        clearInterval(microBurstIntervalRef.current);
       }
       
       // Clean up event listeners
@@ -690,6 +831,184 @@ const MorseCodeApp = () => {
     });
   };
   
+  // Function to start Micro-Burst practice
+  const startMicroBurstPractice = () => {
+    // Initialize audio context on user interaction
+    initializeAudioContext();
+    
+    // Clear any existing interval to prevent overlapping exercises
+    if (microBurstIntervalRef.current) {
+      clearInterval(microBurstIntervalRef.current);
+      microBurstIntervalRef.current = null;
+    }
+    
+    setMicroBurstActive(true);
+    
+    // Get the introduced characters to practice
+    const availableChars = Object.entries(characterMastery)
+      .filter(([_, data]) => data.introduced)
+      .map(([char, _]) => char);
+    
+    if (availableChars.length === 0) {
+      // If no characters are introduced yet, use the first character from the progression
+      availableChars.push(characterProgression[0]);
+    }
+    
+    // Announce for screen readers
+    if (ariaLiveRef.current) {
+      ariaLiveRef.current.textContent = 'Starting micro-burst practice';
+    }
+    
+    let burstCount = 0;
+    const totalBursts = 20; // 20 micro-bursts in a session
+    
+    const runMicroBurst = () => {
+      if (burstCount >= totalBursts) {
+        if (microBurstIntervalRef.current) {
+          clearInterval(microBurstIntervalRef.current);
+          microBurstIntervalRef.current = null;
+        }
+        setMicroBurstActive(false);
+        setMicroBurstChar('');
+        
+        // Announce completion for screen readers
+        if (ariaLiveRef.current) {
+          ariaLiveRef.current.textContent = 'Micro-burst practice complete';
+        }
+        return;
+      }
+      
+      // Select a random character from the available ones
+      const randomIndex = Math.floor(Math.random() * availableChars.length);
+      const randomChar = availableChars[randomIndex];
+      
+      // Set the current character for display
+      setMicroBurstChar(randomChar);
+      
+      // Play the sound and trigger haptic feedback
+      playMorseSound(morseCodeMap[randomChar]);
+      triggerHaptic(morseCodeMap[randomChar]);
+      
+      // Announce for screen readers
+      if (ariaLiveRef.current) {
+        ariaLiveRef.current.textContent = `Playing ${randomChar}`;
+      }
+      
+      burstCount++;
+    };
+    
+    // Run the first burst immediately
+    runMicroBurst();
+    
+    // Schedule the rest of the bursts at random intervals between 1.5 and 3 seconds
+    microBurstIntervalRef.current = setInterval(() => {
+      runMicroBurst();
+    }, 2000); // 2 seconds between bursts for consistency
+  };
+  
+  // Function to stop Micro-Burst practice
+  const stopMicroBurstPractice = () => {
+    if (microBurstIntervalRef.current) {
+      clearInterval(microBurstIntervalRef.current);
+      microBurstIntervalRef.current = null;
+    }
+    setMicroBurstActive(false);
+    setMicroBurstChar('');
+    
+    // Announce for screen readers
+    if (ariaLiveRef.current) {
+      ariaLiveRef.current.textContent = 'Micro-burst practice stopped';
+    }
+  };
+  
+  // Function to select learning method and close path selection UI
+  const selectLearningMethod = (method) => {
+    updatePreference('learningMethod', method);
+    setShowPathSelection(false);
+  };
+  
+  // Function to get theme-based class names
+  const getThemeClasses = (element) => {
+    const mode = preferences.colorMode;
+    
+    switch (element) {
+      case 'mainBg':
+        return mode === 'dark' ? 'bg-gray-900 text-gray-100' : 
+               mode === 'light' ? 'bg-gray-100 text-gray-800' : 
+               mode === 'pipboy' ? 'bg-black text-green-400' : 
+               'bg-gray-900 text-gray-100';
+      
+      case 'header':
+        return mode === 'dark' ? 'bg-gray-800' : 
+               mode === 'light' ? 'bg-indigo-600' : 
+               mode === 'pipboy' ? 'bg-green-900 bg-opacity-50' :
+               'bg-gray-800';
+      
+      case 'card':
+        return mode === 'dark' ? 'bg-gray-800' : 
+               mode === 'light' ? 'bg-white' : 
+               mode === 'pipboy' ? 'bg-black border border-green-500' :
+               'bg-gray-800';
+      
+      case 'panel':
+        return mode === 'dark' ? 'bg-gray-700' : 
+               mode === 'light' ? 'bg-gray-100' : 
+               mode === 'pipboy' ? 'bg-green-900 bg-opacity-30' :
+               'bg-gray-700';
+      
+      case 'button':
+        return mode === 'dark' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 
+               mode === 'light' ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 
+               mode === 'pipboy' ? 'bg-green-800 text-green-300 hover:bg-green-700' :
+               'bg-indigo-600 text-white hover:bg-indigo-700';
+      
+      case 'secondaryButton':
+        return mode === 'dark' ? 'bg-gray-600 text-white hover:bg-gray-500' : 
+               mode === 'light' ? 'bg-gray-300 text-gray-800 hover:bg-gray-400' : 
+               mode === 'pipboy' ? 'bg-green-900 text-green-300 hover:bg-green-800' :
+               'bg-gray-600 text-white hover:bg-gray-500';
+      
+      case 'navLink':
+        return mode === 'dark' ? 'text-gray-400' : 
+               mode === 'light' ? 'text-gray-500' : 
+               mode === 'pipboy' ? 'text-green-600' :
+               'text-gray-400';
+      
+      case 'navLinkActive':
+        return mode === 'dark' ? 'text-indigo-500' : 
+               mode === 'light' ? 'text-indigo-500' : 
+               mode === 'pipboy' ? 'text-green-400' :
+               'text-indigo-500';
+      
+      case 'border':
+        return mode === 'dark' ? 'border-gray-700' : 
+               mode === 'light' ? 'border-gray-200' : 
+               mode === 'pipboy' ? 'border-green-800' :
+               'border-gray-700';
+      
+      case 'highlight':
+        return mode === 'dark' ? 'text-indigo-400' : 
+               mode === 'light' ? 'text-indigo-600' : 
+               mode === 'pipboy' ? 'text-green-300' :
+               'text-indigo-400';
+      
+      case 'progressBar':
+        return mode === 'dark' ? 'bg-indigo-500' : 
+               mode === 'light' ? 'bg-indigo-500' : 
+               mode === 'pipboy' ? 'bg-green-500' :
+               'bg-indigo-500';
+      
+      case 'muted':
+        return mode === 'dark' ? 'text-gray-400' : 
+               mode === 'light' ? 'text-gray-600' : 
+               mode === 'pipboy' ? 'text-green-700' :
+               'text-gray-400';
+      
+      default:
+        return '';
+    }
+  };
+  
   // Render exercise content based on type
   const renderExerciseContent = () => {
     if (!currentLesson || currentExercise >= currentLesson.exercises.length) return null;
@@ -702,12 +1021,12 @@ const MorseCodeApp = () => {
       case 'patternIntro':
       case 'audio_recognition':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-white">{exercise.title}</h3>
-            <p className="text-gray-200 mb-6">{exercise.content}</p>
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-4">{exercise.title}</h3>
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-6`}>{exercise.content}</p>
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className={`px-4 py-2 ${getThemeClasses('button')} rounded-lg transition-colors`}
               aria-label="Continue to next exercise"
             >
               Continue
@@ -717,12 +1036,12 @@ const MorseCodeApp = () => {
         
       case 'character':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-2 text-white">New Character: {exercise.char}</h3>
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-2">New Character: {exercise.char}</h3>
             
             <div className="flex justify-center items-center my-6">
-              <div className="text-6xl font-mono font-bold text-white mr-8">{exercise.char}</div>
-              <div className="text-5xl text-indigo-400">{exercise.morse}</div>
+              <div className="text-6xl font-mono font-bold mr-8">{exercise.char}</div>
+              <div className={`text-5xl ${getThemeClasses('highlight')}`}>{exercise.morse}</div>
             </div>
             
             <div className="flex justify-center space-x-2 my-6">
@@ -731,7 +1050,7 @@ const MorseCodeApp = () => {
                   key={idx} 
                   className={`flex items-center justify-center ${
                     symbol === '•' ? 'w-8 h-8 rounded-full' : 'w-16 h-8 rounded-lg'
-                  } bg-indigo-500`}
+                  } ${preferences.colorMode === 'pipboy' ? 'bg-green-700' : 'bg-indigo-500'}`}
                   aria-label={symbol === '•' ? 'dot' : 'dash'}
                   onClick={() => {
                     initializeAudioContext();
@@ -742,7 +1061,7 @@ const MorseCodeApp = () => {
               ))}
             </div>
             
-            <p className="text-gray-200 mb-6">{exercise.mnemonic}</p>
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-6`}>{exercise.mnemonic}</p>
             
             <div className="flex justify-center space-x-4 mb-6">
               <button 
@@ -751,7 +1070,7 @@ const MorseCodeApp = () => {
                   playMorseSound(morseCodeMap[exercise.char]);
                   triggerHaptic(morseCodeMap[exercise.char]);
                 }}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-lg flex items-center"
+                className={`px-3 py-2 ${getThemeClasses('button')} rounded-lg flex items-center`}
                 aria-label={`Listen to Morse code for ${exercise.char}`}
               >
                 <Volume2 size={18} className="mr-2" />
@@ -760,7 +1079,7 @@ const MorseCodeApp = () => {
               
               <button 
                 onClick={() => triggerHaptic(morseCodeMap[exercise.char])}
-                className="px-3 py-2 bg-indigo-600 text-white rounded-lg flex items-center"
+                className={`px-3 py-2 ${getThemeClasses('button')} rounded-lg flex items-center`}
                 disabled={!preferences.hapticEnabled}
                 aria-label={`Feel haptic pattern for ${exercise.char}`}
               >
@@ -769,12 +1088,12 @@ const MorseCodeApp = () => {
               </button>
             </div>
             
-            <div className="bg-gray-700 p-4 rounded-lg mb-6">
+            <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
               <div className="flex items-center justify-center mb-2">
-                <Headphones size={24} className="text-indigo-400 mr-2" />
-                <h4 className="font-bold text-white">Training Your Ear</h4>
+                <Headphones size={24} className={`${getThemeClasses('highlight')} mr-2`} />
+                <h4 className="font-bold">Training Your Ear</h4>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'}`}>
                 Listen to this character multiple times to train your brain to recognize the 
                 sound pattern automatically. Press the Listen button several times and close your eyes
                 while listening to focus on the sound.
@@ -783,7 +1102,7 @@ const MorseCodeApp = () => {
             
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className={`px-4 py-2 ${preferences.colorMode === 'pipboy' ? 'bg-green-600 text-green-200 hover:bg-green-500' : 'bg-green-600 text-white hover:bg-green-700'} rounded-lg transition-colors`}
               aria-label="Confirm you understand the character and continue"
             >
               Got it!
@@ -793,22 +1112,22 @@ const MorseCodeApp = () => {
         
       case 'flashPractice':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-white">
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-4">
               Flash Practice: {exercise.char || exercise.chars?.join(', ')}
             </h3>
             
-            <p className="text-gray-300 mb-6">
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-6`}>
               I'll play these characters {exercise.reps} times with {exercise.interval} second intervals.
               Characters are played at full speed using Koch/Farnsworth methods.
             </p>
             
             <div className="flex justify-center mb-2">
-              <div className="p-4 bg-gray-700 rounded-lg mb-4 inline-block">
-                <h4 className="text-white font-bold mb-2">Koch Method with Farnsworth Timing</h4>
-                <p className="text-sm text-gray-300 text-left">
+              <div className={`p-4 ${getThemeClasses('panel')} rounded-lg mb-4 inline-block`}>
+                <h4 className="font-bold mb-2">Koch Method with Farnsworth Timing</h4>
+                <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'} text-left`}>
                   Characters are played at <span className="text-green-400">{preferences.charSpeed} WPM</span> to train your brain 
-                  to recognize the true sound patterns. The <span className="text-yellow-400">gaps between characters</span> are 
+                  to recognize the true sound patterns. The <span className={preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-yellow-400'}>gaps between characters</span> are 
                   extended to give an effective speed of <span className="text-green-400">{preferences.effectiveSpeed} WPM</span>.
                 </p>
               </div>
@@ -879,7 +1198,11 @@ const MorseCodeApp = () => {
                 }}
                 disabled={isExerciseActive}
                 className={`px-4 py-2 rounded-lg flex items-center ${
-                  isExerciseActive ? 'bg-gray-600 text-gray-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  isExerciseActive 
+                    ? preferences.colorMode === 'pipboy' 
+                      ? 'bg-green-900 text-green-600' 
+                      : 'bg-gray-600 text-gray-400' 
+                    : getThemeClasses('button')
                 } transition-colors`}
                 aria-label={isExerciseActive ? "Flash practice in progress" : "Start flash practice"}
               >
@@ -909,7 +1232,13 @@ const MorseCodeApp = () => {
               }}
               disabled={isExerciseActive}
               className={`px-4 py-2 rounded-lg ${
-                isExerciseActive ? 'bg-gray-600 text-gray-400' : 'bg-green-600 text-white hover:bg-green-700'
+                isExerciseActive 
+                  ? preferences.colorMode === 'pipboy' 
+                    ? 'bg-green-900 text-green-600' 
+                    : 'bg-gray-600 text-gray-400' 
+                  : preferences.colorMode === 'pipboy'
+                    ? 'bg-green-600 text-green-200 hover:bg-green-500'
+                    : 'bg-green-600 text-white hover:bg-green-700'
               } transition-colors`}
               aria-label="Complete exercise and continue"
             >
@@ -922,12 +1251,12 @@ const MorseCodeApp = () => {
       case 'contrastPractice':
       case 'multiCharPractice':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-white">
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-4">
               Practice: {exercise.chars.join(' vs ')}
             </h3>
             
-            <p className="text-gray-300 mb-6">
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-6`}>
               I'll play a random sequence of {exercise.chars.join(', ')}. Try to identify each character by sound.
             </p>
             
@@ -943,22 +1272,22 @@ const MorseCodeApp = () => {
                       playMorseSound(morseCodeMap[char]);
                       triggerHaptic(morseCodeMap[char]);
                     }}
-                    className="p-4 bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
+                    className={`p-4 ${preferences.colorMode === 'pipboy' ? 'bg-black border border-green-600' : 'bg-gray-900'} rounded-lg ${preferences.colorMode === 'pipboy' ? 'hover:bg-green-900 hover:bg-opacity-20' : 'hover:bg-gray-700'} transition-colors`}
                     aria-label={`Play Morse code for letter ${char}`}
                   >
-                    <div className="text-4xl font-mono font-bold text-white mb-2">{char}</div>
-                    <div className="text-xl text-indigo-400">{morse}</div>
+                    <div className="text-4xl font-mono font-bold mb-2">{char}</div>
+                    <div className={`text-xl ${getThemeClasses('highlight')}`}>{morse}</div>
                   </button>
                 );
               })}
             </div>
             
-            <div className="bg-gray-700 p-4 rounded-lg mb-6">
+            <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
               <div className="flex items-center justify-center mb-2">
-                <Ear size={24} className="text-indigo-400 mr-2" />
-                <h4 className="font-bold text-white">Sound Identification Challenge</h4>
+                <Ear size={24} className={`${getThemeClasses('highlight')} mr-2`} />
+                <h4 className="font-bold">Sound Identification Challenge</h4>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'}`}>
                 When you start the practice, close your eyes and try to identify each character 
                 by sound BEFORE looking at the answers. This trains your ear to recognize Morse patterns.
               </p>
@@ -1045,7 +1374,11 @@ const MorseCodeApp = () => {
                 }}
                 disabled={isExerciseActive}
                 className={`px-4 py-2 rounded-lg flex items-center ${
-                  isExerciseActive ? 'bg-gray-600 text-gray-400' : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                  isExerciseActive 
+                    ? preferences.colorMode === 'pipboy' 
+                      ? 'bg-green-900 text-green-600' 
+                      : 'bg-gray-600 text-gray-400' 
+                    : getThemeClasses('button')
                 } transition-colors`}
                 aria-label={isExerciseActive ? "Practice in progress" : "Start practice sets"}
               >
@@ -1075,7 +1408,13 @@ const MorseCodeApp = () => {
               }}
               disabled={isExerciseActive}
               className={`px-4 py-2 rounded-lg ${
-                isExerciseActive ? 'bg-gray-600 text-gray-400' : 'bg-green-600 text-white hover:bg-green-700'
+                isExerciseActive 
+                  ? preferences.colorMode === 'pipboy' 
+                    ? 'bg-green-900 text-green-600' 
+                    : 'bg-gray-600 text-gray-400' 
+                  : preferences.colorMode === 'pipboy'
+                    ? 'bg-green-600 text-green-200 hover:bg-green-500'
+                    : 'bg-green-600 text-white hover:bg-green-700'
               } transition-colors`}
               aria-label="Complete exercise and continue"
             >
@@ -1087,12 +1426,12 @@ const MorseCodeApp = () => {
       case 'review':
       case 'spaceRep':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-white">
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-4">
               Review: {exercise.chars.join(', ')}
             </h3>
             
-            <p className="text-gray-300 mb-6">
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-6`}>
               Let's quickly review these characters before learning new ones.
             </p>
             
@@ -1107,22 +1446,22 @@ const MorseCodeApp = () => {
                       playMorseSound(morseCodeMap[char]);
                       triggerHaptic(morseCodeMap[char]);
                     }}
-                    className="p-4 bg-gray-900 rounded-lg hover:bg-gray-700 transition-colors"
+                    className={`p-4 ${preferences.colorMode === 'pipboy' ? 'bg-black border border-green-600' : 'bg-gray-900'} rounded-lg ${preferences.colorMode === 'pipboy' ? 'hover:bg-green-900 hover:bg-opacity-20' : 'hover:bg-gray-700'} transition-colors`}
                     aria-label={`Play Morse code for letter ${char}`}
                   >
-                    <div className="text-4xl font-mono font-bold text-white mb-2">{char}</div>
-                    <div className="text-xl text-indigo-400">{morse}</div>
+                    <div className="text-4xl font-mono font-bold mb-2">{char}</div>
+                    <div className={`text-xl ${getThemeClasses('highlight')}`}>{morse}</div>
                   </button>
                 );
               })}
             </div>
             
-            <div className="bg-gray-700 p-4 rounded-lg mb-6">
+            <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
               <div className="flex items-center justify-center mb-2">
-                <Zap size={24} className="text-indigo-400 mr-2" />
-                <h4 className="font-bold text-white">Spaced Repetition Boost</h4>
+                <Zap size={24} className={`${getThemeClasses('highlight')} mr-2`} />
+                <h4 className="font-bold">Spaced Repetition Boost</h4>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'}`}>
                 Reviewing these characters now strengthens your neural pathways. 
                 Spaced repetition is proven to be highly effective for AuDHD learners!
               </p>
@@ -1130,7 +1469,7 @@ const MorseCodeApp = () => {
             
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className={`px-4 py-2 ${preferences.colorMode === 'pipboy' ? 'bg-green-600 text-green-200 hover:bg-green-500' : 'bg-green-600 text-white hover:bg-green-700'} rounded-lg transition-colors`}
               aria-label="Continue to next exercise"
             >
               Continue
@@ -1140,50 +1479,50 @@ const MorseCodeApp = () => {
       
       case 'rhythm_tapping':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <h3 className="text-xl font-bold mb-4 text-white">{exercise.title}</h3>
-            <p className="text-gray-200 mb-6">{exercise.content}</p>
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <h3 className="text-xl font-bold mb-4">{exercise.title}</h3>
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-6`}>{exercise.content}</p>
             
             <div className="flex justify-center space-x-8 mb-6">
               <div className="text-center">
-                <div className="text-4xl font-mono font-bold text-white mb-2">E = •</div>
+                <div className="text-4xl font-mono font-bold mb-2">E = •</div>
                 <button
                   onClick={() => {
                     initializeAudioContext();
                     playMorseSound('.');
                     triggerHaptic('.');
                   }}
-                  className="w-16 h-16 mx-auto rounded-full border-4 border-indigo-400 flex items-center justify-center hover:bg-indigo-900 transition-colors"
+                  className={`w-16 h-16 mx-auto rounded-full border-4 ${preferences.colorMode === 'pipboy' ? 'border-green-400' : 'border-indigo-400'} flex items-center justify-center ${preferences.colorMode === 'pipboy' ? 'hover:bg-green-900 hover:bg-opacity-30' : 'hover:bg-indigo-900'} transition-colors`}
                   aria-label="Tap rhythm for E"
                 >
-                  <div className="w-4 h-4 bg-indigo-400 rounded-full"></div>
+                  <div className={`w-4 h-4 ${preferences.colorMode === 'pipboy' ? 'bg-green-400' : 'bg-indigo-400'} rounded-full`}></div>
                 </button>
-                <p className="text-gray-300 mt-2">Tap once quickly</p>
+                <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mt-2`}>Tap once quickly</p>
               </div>
               
               <div className="text-center">
-                <div className="text-4xl font-mono font-bold text-white mb-2">T = −</div>
+                <div className="text-4xl font-mono font-bold mb-2">T = −</div>
                 <button
                   onClick={() => {
                     initializeAudioContext();
                     playMorseSound('-');
                     triggerHaptic('-');
                   }}
-                  className="w-16 h-16 mx-auto rounded-lg border-4 border-indigo-500 flex items-center justify-center hover:bg-indigo-900 transition-colors"
+                  className={`w-16 h-16 mx-auto rounded-lg border-4 ${preferences.colorMode === 'pipboy' ? 'border-green-500' : 'border-indigo-500'} flex items-center justify-center ${preferences.colorMode === 'pipboy' ? 'hover:bg-green-900 hover:bg-opacity-30' : 'hover:bg-indigo-900'} transition-colors`}
                   aria-label="Tap rhythm for T"
                 >
-                  <div className="w-12 h-4 bg-indigo-500 rounded-lg"></div>
+                  <div className={`w-12 h-4 ${preferences.colorMode === 'pipboy' ? 'bg-green-500' : 'bg-indigo-500'} rounded-lg`}></div>
                 </button>
-                <p className="text-gray-300 mt-2">Press and hold</p>
+                <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mt-2`}>Press and hold</p>
               </div>
             </div>
             
-            <div className="bg-gray-700 p-4 rounded-lg mb-6">
+            <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
               <div className="flex items-center justify-center mb-2">
-                <Headphones size={24} className="text-indigo-400 mr-2" />
-                <h4 className="font-bold text-white">Rhythm is Key to Morse Code</h4>
+                <Headphones size={24} className={`${getThemeClasses('highlight')} mr-2`} />
+                <h4 className="font-bold">Rhythm is Key to Morse Code</h4>
               </div>
-              <p className="text-sm text-gray-300">
+              <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'}`}>
                 Feeling the rhythm of dots and dashes helps your brain process the patterns 
                 more efficiently. Tap along with the sounds to strengthen these neural connections.
               </p>
@@ -1191,7 +1530,7 @@ const MorseCodeApp = () => {
             
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className={`px-4 py-2 ${preferences.colorMode === 'pipboy' ? 'bg-green-600 text-green-200 hover:bg-green-500' : 'bg-green-600 text-white hover:bg-green-700'} rounded-lg transition-colors`}
               aria-label="Confirm you understand and continue"
             >
               Got it!
@@ -1201,25 +1540,25 @@ const MorseCodeApp = () => {
       
       case 'reward':
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
             <div className="text-yellow-300 text-4xl mb-4">🎉</div>
-            <h3 className="text-xl font-bold mb-2 text-white">{exercise.title}</h3>
-            <p className="text-gray-200 mb-4">{exercise.content}</p>
+            <h3 className="text-xl font-bold mb-2">{exercise.title}</h3>
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-4`}>{exercise.content}</p>
             
-            <div className="bg-gray-700 rounded-lg p-4 mb-6 inline-block">
+            <div className={`${getThemeClasses('panel')} rounded-lg p-4 mb-6 inline-block`}>
               <div className="flex items-center">
-                <Star size={20} className="text-yellow-400 mr-2" />
-                <span className="text-yellow-100">+{exercise.points} points</span>
+                <Star size={20} className={`${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-yellow-400'} mr-2`} />
+                <span className={preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-yellow-100'}>+{exercise.points} points</span>
               </div>
               <div className="flex items-center mt-2">
-                <Award size={20} className="text-indigo-400 mr-2" />
-                <span className="text-indigo-200">New badge: {exercise.badge}</span>
+                <Award size={20} className={`${getThemeClasses('highlight')} mr-2`} />
+                <span className={preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-indigo-200'}>New badge: {exercise.badge}</span>
               </div>
             </div>
             
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              className={`px-4 py-2 ${preferences.colorMode === 'pipboy' ? 'bg-green-600 text-green-200 hover:bg-green-500' : 'bg-green-600 text-white hover:bg-green-700'} rounded-lg transition-colors`}
               aria-label="Continue to next exercise"
             >
               Continue
@@ -1229,11 +1568,11 @@ const MorseCodeApp = () => {
       
       default:
         return (
-          <div className="bg-gray-800 rounded-xl p-6 text-center">
-            <p className="text-gray-200 mb-4">Unknown exercise type</p>
+          <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
+            <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-4`}>Unknown exercise type</p>
             <button 
               onClick={completeExercise}
-              className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              className={`px-4 py-2 ${getThemeClasses('button')} rounded-lg transition-colors`}
               aria-label="Skip this exercise"
             >
               Skip
@@ -1243,6 +1582,80 @@ const MorseCodeApp = () => {
     }
   };
 
+  // Render path selection dialog
+  const renderPathSelection = () => {
+    if (!showPathSelection) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+        <div className={`${getThemeClasses('card')} rounded-xl p-6 w-full max-w-2xl`}>
+          <h2 className="text-2xl font-bold mb-4 text-center">Choose Your Learning Path</h2>
+          
+          <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-6 text-center`}>
+            Select a learning method to get started with Morse code. You can change this later in settings.
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <button
+              onClick={() => selectLearningMethod('Logical')}
+              className={`p-6 rounded-lg text-left ${preferences.colorMode === 'pipboy' ? 
+                'bg-green-900 bg-opacity-30 border border-green-600 hover:bg-green-800 hover:bg-opacity-50' : 
+                'bg-indigo-900 bg-opacity-20 border border-indigo-500 hover:bg-indigo-800 hover:bg-opacity-30'} transition-colors`}
+            >
+              <h3 className="text-xl font-bold mb-2 flex items-center">
+                <Lightbulb size={24} className="mr-2" />
+                Logical Method
+              </h3>
+              <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-4`}>
+                Start with the simplest characters (T, E) and progressively learn more complex ones. Characters are grouped in logical pairs.
+              </p>
+              <div className={`mb-3 ${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-indigo-300'}`}>
+                <strong>Best for:</strong> Beginners who prefer a structured, logical progression
+              </div>
+              <div className="flex items-center text-sm">
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>T, E</div>
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>A, N</div>
+                <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>I, M...</div>
+              </div>
+            </button>
+            
+            <button
+              onClick={() => selectLearningMethod('Koch')}
+              className={`p-6 rounded-lg text-left ${preferences.colorMode === 'pipboy' ? 
+                'bg-green-900 bg-opacity-30 border border-green-600 hover:bg-green-800 hover:bg-opacity-50' : 
+                'bg-indigo-900 bg-opacity-20 border border-indigo-500 hover:bg-indigo-800 hover:bg-opacity-30'} transition-colors`}
+            >
+              <h3 className="text-xl font-bold mb-2 flex items-center">
+                <MessageCircle size={24} className="mr-2" />
+                Koch Method
+              </h3>
+              <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-4`}>
+                Start with distinctive characters (K, M) and learn to distinguish between similar sounding patterns. Traditional approach used by LCWO.net.
+              </p>
+              <div className={`mb-3 ${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-indigo-300'}`}>
+                <strong>Best for:</strong> Those focused on auditory pattern recognition
+              </div>
+              <div className="flex items-center text-sm">
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>K, M</div>
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>U, R</div>
+                <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>E, S...</div>
+              </div>
+            </button>
+          </div>
+          
+          <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
+            <div className="flex items-center">
+              <Info size={20} className={`${getThemeClasses('highlight')} mr-2`} />
+              <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'}`}>
+                Both methods use the same learning principles (Koch method with Farnsworth timing) but differ in the order characters are introduced.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  
   // Main render
   return (
     <AppContext.Provider value={{ 
@@ -1255,8 +1668,8 @@ const MorseCodeApp = () => {
       rewards,
       setRewards 
     }}>
-      <div className={`flex flex-col h-screen ${
-        preferences.colorMode === 'dark' ? 'bg-gray-900 text-gray-100' : 'bg-gray-100 text-gray-800'
+      <div className={`flex flex-col h-screen ${getThemeClasses('mainBg')} ${
+        preferences.colorMode === 'pipboy' ? 'pipboy-theme' : ''
       }`}>
         {/* ARIA live region for screen reader announcements */}
         <div 
@@ -1267,14 +1680,12 @@ const MorseCodeApp = () => {
         ></div>
         
         {/* App Header */}
-        <header className={`${
-          preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-indigo-600'
-        } text-white p-4 shadow-md`}>
+        <header className={`${getThemeClasses('header')} text-white p-4 shadow-md`}>
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Morse for AuDHD</h1>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center bg-opacity-25 bg-black rounded-full px-3 py-1">
-                <Star size={16} className="text-yellow-400 mr-1" aria-hidden="true" />
+              <div className={`flex items-center bg-opacity-25 bg-black rounded-full px-3 py-1 ${preferences.colorMode === 'pipboy' ? 'text-green-300' : ''}`}>
+                <Star size={16} className={preferences.colorMode === 'pipboy' ? 'text-green-400 mr-1' : 'text-yellow-400 mr-1'} aria-hidden="true" />
                 <span aria-label={`${points} points`}>{points}</span>
               </div>
               
@@ -1296,17 +1707,49 @@ const MorseCodeApp = () => {
         
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-4">
+          {/* Micro-Burst Practice Overlay */}
+          {microBurstActive && (
+            <div className={`fixed inset-0 flex flex-col items-center justify-center z-40 bg-opacity-90 ${
+              preferences.colorMode === 'pipboy' ? 'bg-black' : 'bg-gray-900'
+            }`}>
+              <div className={`text-center p-6 rounded-xl ${
+                preferences.colorMode === 'pipboy' ? 'border-4 border-green-700' : ''
+              }`}>
+                <h2 className="text-2xl font-bold mb-2">Micro-Burst Practice</h2>
+                <p className={`mb-8 ${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'}`}>
+                  Listen to the character and try to identify it instantly
+                </p>
+                
+                <div className={`text-9xl font-mono font-bold mb-12 ${microBurstChar ? 'visible' : 'invisible'}`}>
+                  {microBurstChar}
+                </div>
+                
+                <div className="mb-8">
+                  <p className={`text-lg ${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-gray-200'}`}>
+                    Recognize the sound before seeing the character
+                  </p>
+                </div>
+                
+                <button
+                  onClick={stopMicroBurstPractice}
+                  className={`px-6 py-3 rounded-lg ${
+                    preferences.colorMode === 'pipboy' ? 'bg-green-700 text-green-100 hover:bg-green-600' : 'bg-red-600 text-white hover:bg-red-700'
+                  } transition-colors`}
+                  aria-label="Stop micro-burst practice"
+                >
+                  Stop Practice
+                </button>
+              </div>
+            </div>
+          )}
+        
           {currentTab === 'home' && (
             <div className="space-y-6">
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-6`}>
+              <div className={`${getThemeClasses('card')} rounded-xl shadow-md p-6`}>
                 <h2 className="text-xl font-bold mb-4">Your Morse Journey</h2>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
+                  <div className={`p-4 rounded-lg ${getThemeClasses('panel')}`}>
                     <h3 className="font-bold mb-1">Daily Streak</h3>
                     <div className="flex items-center">
                       <div className="text-3xl font-bold mr-2">{streakDays}</div>
@@ -1314,9 +1757,7 @@ const MorseCodeApp = () => {
                     </div>
                   </div>
                   
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
+                  <div className={`p-4 rounded-lg ${getThemeClasses('panel')}`}>
                     <h3 className="font-bold mb-1">Characters Learned</h3>
                     <div className="flex items-center">
                       <div className="text-3xl font-bold mr-2">
@@ -1326,9 +1767,7 @@ const MorseCodeApp = () => {
                     </div>
                   </div>
                   
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
+                  <div className={`p-4 rounded-lg ${getThemeClasses('panel')}`}>
                     <h3 className="font-bold mb-1">Points Earned</h3>
                     <div className="flex items-center">
                       <div className="text-3xl font-bold mr-2">{points}</div>
@@ -1337,9 +1776,7 @@ const MorseCodeApp = () => {
                   </div>
                 </div>
                 
-                <div className={`p-4 rounded-lg mb-4 ${
-                  preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
+                <div className={`p-4 rounded-lg mb-4 ${getThemeClasses('panel')}`}>
                   <h3 className="font-bold mb-2">Today's Goal</h3>
                   <p className="mb-3">Complete your daily {preferences.sessionLength}-minute Morse session</p>
                   <div className="flex justify-between">
@@ -1351,7 +1788,7 @@ const MorseCodeApp = () => {
                           : currentDay;
                         startLesson(nextLesson);
                       }}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                      className={`px-4 py-2 ${getThemeClasses('button')} rounded-lg transition-colors`}
                       aria-label="Start today's lesson"
                     >
                       Start Today's Lesson
@@ -1359,11 +1796,7 @@ const MorseCodeApp = () => {
                     
                     <button
                       onClick={() => setCurrentTab('practice')}
-                      className={`px-4 py-2 rounded-lg ${
-                        preferences.colorMode === 'dark'
-                          ? 'bg-gray-600 text-white hover:bg-gray-500'
-                          : 'bg-gray-300 text-gray-800 hover:bg-gray-400'
-                      } transition-colors`}
+                      className={`px-4 py-2 rounded-lg ${getThemeClasses('secondaryButton')} transition-colors`}
                       aria-label="Go to quick practice"
                     >
                       Quick Practice
@@ -1371,19 +1804,17 @@ const MorseCodeApp = () => {
                   </div>
                 </div>
                 
-                <div className={`p-4 rounded-lg mb-6 ${
-                  preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                }`}>
+                <div className={`p-4 rounded-lg mb-6 ${getThemeClasses('panel')}`}>
                   <div className="flex items-center mb-3">
-                    <Info size={18} className="text-indigo-400 mr-2" />
-                    <h3 className="font-bold">About the Koch Method</h3>
+                    <Info size={18} className={`${getThemeClasses('highlight')} mr-2`} />
+                    <h3 className="font-bold">Current Method: {preferences.learningMethod}</h3>
                   </div>
-                  <p className="text-sm mb-2">
+                  <p className={`text-sm mb-2 ${preferences.colorMode === 'pipboy' ? 'text-green-500' : ''}`}>
                     This app uses the Koch method, which introduces characters one at a time at full speed 
                     ({preferences.charSpeed} WPM). The spacing between characters is extended to achieve an effective 
                     speed of {preferences.effectiveSpeed} WPM (Farnsworth timing).
                   </p>
-                  <p className="text-sm">
+                  <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : ''}`}>
                     Research shows this approach is highly effective for developing auditory pattern 
                     recognition, especially for AuDHD learners who benefit from consistent, structured learning.
                   </p>
@@ -1396,26 +1827,38 @@ const MorseCodeApp = () => {
                       key={lesson.day} 
                       className={`flex items-center p-3 rounded-lg ${
                         lesson.day < currentDay
-                          ? preferences.colorMode === 'dark' 
-                            ? 'bg-indigo-900 bg-opacity-30' 
-                            : 'bg-indigo-100'
+                          ? preferences.colorMode === 'pipboy'
+                            ? 'bg-green-900 bg-opacity-30 border border-green-800'
+                            : preferences.colorMode === 'dark' 
+                              ? 'bg-indigo-900 bg-opacity-30' 
+                              : 'bg-indigo-100'
                           : lesson.day === currentDay
-                            ? preferences.colorMode === 'dark'
-                              ? 'bg-indigo-800 border border-indigo-500'
-                              : 'bg-indigo-200 border border-indigo-400'
-                            : preferences.colorMode === 'dark'
-                              ? 'bg-gray-700 opacity-70'
-                              : 'bg-gray-100 opacity-70'
+                            ? preferences.colorMode === 'pipboy'
+                              ? 'bg-green-800 border border-green-500'
+                              : preferences.colorMode === 'dark'
+                                ? 'bg-indigo-800 border border-indigo-500'
+                                : 'bg-indigo-200 border border-indigo-400'
+                            : preferences.colorMode === 'pipboy'
+                              ? 'bg-green-950 border border-green-900 opacity-70'
+                              : preferences.colorMode === 'dark'
+                                ? 'bg-gray-700 opacity-70'
+                                : 'bg-gray-100 opacity-70'
                       }`}
                     >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
                         lesson.day < currentDay
-                          ? 'bg-green-500 text-white'
+                          ? preferences.colorMode === 'pipboy'
+                            ? 'bg-green-600 text-black'
+                            : 'bg-green-500 text-white'
                           : lesson.day === currentDay
-                            ? 'bg-indigo-600 text-white'
-                            : preferences.colorMode === 'dark'
-                              ? 'bg-gray-600 text-gray-300'
-                              : 'bg-gray-300 text-gray-700'
+                            ? preferences.colorMode === 'pipboy'
+                              ? 'bg-green-500 text-black'
+                              : 'bg-indigo-600 text-white'
+                            : preferences.colorMode === 'pipboy'
+                              ? 'bg-green-800 text-green-300'
+                              : preferences.colorMode === 'dark'
+                                ? 'bg-gray-600 text-gray-300'
+                                : 'bg-gray-300 text-gray-700'
                       }`}>
                         {lesson.day < currentDay ? (
                           <CheckCircle size={16} aria-hidden="true" />
@@ -1439,10 +1882,12 @@ const MorseCodeApp = () => {
                         disabled={lesson.day > currentDay}
                         className={`ml-2 px-3 py-1 rounded-lg ${
                           lesson.day <= currentDay
-                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                            : preferences.colorMode === 'dark'
-                              ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                              : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            ? getThemeClasses('button')
+                            : preferences.colorMode === 'pipboy'
+                              ? 'bg-green-900 text-green-700 cursor-not-allowed'
+                              : preferences.colorMode === 'dark'
+                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                         }`}
                         aria-label={lesson.day < currentDay ? `Review day ${lesson.day}` : 
                                    lesson.day === currentDay ? `Start day ${lesson.day}` : 
@@ -1464,9 +1909,7 @@ const MorseCodeApp = () => {
           
           {currentTab === 'learn' && !currentLesson && (
             <div className="space-y-6">
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-6`}>
+              <div className={`${getThemeClasses('card')} rounded-xl shadow-md p-6`}>
                 <h2 className="text-xl font-bold mb-4">Daily Lessons</h2>
                 
                 <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
@@ -1474,15 +1917,17 @@ const MorseCodeApp = () => {
                     <div 
                       key={lesson.day} 
                       className={`border rounded-lg p-4 ${
-                        preferences.colorMode === 'dark' 
-                          ? 'border-gray-700 bg-gray-700' 
-                          : 'border-gray-200 bg-gray-50'
-                      } ${lesson.day > currentDay ? 'opacity-60' : ''}`}
-                    >
+                        preferences.colorMode === 'pipboy'
+                          ? 'border-green-700 bg-green-900 bg-opacity-20'
+                          : preferences.colorMode === 'dark' 
+                            ? 'border-gray-700 bg-gray-700' 
+                            : 'border-gray-200 bg-gray-50'
+                      } ${lesson.day > currentDay ? 'opacity-60' : ''}`}>
                       <div className="flex justify-between items-center">
                         <div>
                           <h3 className="font-bold">Day {lesson.day}: {lesson.title}</h3>
                           <p className={`text-sm ${
+                            preferences.colorMode === 'pipboy' ? 'text-green-400' : 
                             preferences.colorMode === 'dark' ? 'text-gray-300' : 'text-gray-600'
                           }`}>
                             {lesson.description}
@@ -1498,749 +1943,15 @@ const MorseCodeApp = () => {
                           disabled={lesson.day > currentDay}
                           className={`px-3 py-1 rounded-lg ${
                             lesson.day <= currentDay 
-                              ? 'bg-indigo-600 text-white hover:bg-indigo-700' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                              ? getThemeClasses('button')
+                              : preferences.colorMode === 'pipboy'
+                                ? 'bg-green-900 text-green-700 cursor-not-allowed'
+                                : preferences.colorMode === 'dark'
+                                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                                  : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                           }`}
                           aria-label={`Start day ${lesson.day} lesson`}
                         >
                           {lesson.day <= currentDay ? 'Start' : 'Locked'}
                         </button>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-6`}>
-                <h2 className="text-xl font-bold mb-4">Character Mastery</h2>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 max-h-64 overflow-y-auto pr-2">
-                  {Object.entries(characterMastery).map(([char, data]) => (
-                    <div 
-                      key={char}
-                      className={`p-4 rounded-lg ${
-                        data.introduced 
-                          ? preferences.colorMode === 'dark' 
-                            ? 'bg-gray-700' 
-                            : 'bg-gray-100'
-                          : preferences.colorMode === 'dark'
-                            ? 'bg-gray-900 opacity-40'
-                            : 'bg-gray-200 opacity-40'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <span className="text-2xl font-mono font-bold">{char}</span>
-                        {data.introduced ? (
-                          <Unlock size={16} className="text-green-400" aria-hidden="true" />
-                        ) : (
-                          <Lock size={16} className="text-gray-500" aria-hidden="true" />
-                        )}
-                      </div>
-                      
-                      <div className="w-full bg-gray-600 rounded-full h-2 mb-1" 
-                           role="progressbar" 
-                           aria-valuenow={Math.round(data.mastery * 100)}
-                           aria-valuemin="0"
-                           aria-valuemax="100"
-                           aria-label={`Character ${char} mastery level ${Math.round(data.mastery * 100)}%`}>
-                        <div 
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{ width: `${data.mastery * 100}%` }}
-                        ></div>
-                      </div>
-                      <div className="text-xs text-right">
-                        {Math.round(data.mastery * 100)}%
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {currentTab === 'learn' && currentLesson && (
-            <div className="space-y-6">
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-4`}>
-                <div className="flex justify-between items-center mb-2">
-                  <h2 className="text-xl font-bold">Day {currentLesson.day}: {currentLesson.title}</h2>
-                  <div className="flex items-center">
-                    <Clock size={18} className="mr-1" aria-hidden="true" />
-                    <span>{currentLesson.duration} min</span>
-                  </div>
-                </div>
-                
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-1"
-                     role="progressbar"
-                     aria-valuenow={sessionProgress}
-                     aria-valuemin="0"
-                     aria-valuemax="100"
-                     aria-label={`Lesson progress: ${sessionProgress}%`}>
-                  <div 
-                    className="bg-indigo-500 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${sessionProgress}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs">
-                  <span>Exercise {currentExercise + 1} of {currentLesson.exercises.length}</span>
-                  <span>{sessionProgress}% complete</span>
-                </div>
-              </div>
-              
-              {renderExerciseContent()}
-            </div>
-          )}
-          
-          {currentTab === 'practice' && (
-            <div className="space-y-6">
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-6`}>
-                <h2 className="text-xl font-bold mb-4">Spaced Repetition Practice</h2>
-                <p className={`mb-4 ${
-                  preferences.colorMode === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                }`}>
-                  Quick practice sessions use spaced repetition to help cement your Morse code knowledge. Sessions are timed for your optimal learning period.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <h3 className="font-bold mb-3">Micro-Burst Practice</h3>
-                    <p className="text-sm mb-3">3-5 second bursts of Morse code with immediate feedback. Great for maintaining focus and active recall.</p>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm">3 minutes</div>
-                      <button
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                        aria-label="Start micro-burst practice"
-                        onClick={() => {
-                          initializeAudioContext();
-                          // In a full implementation, this would start a micro-burst exercise
-                          if (ariaLiveRef.current) {
-                            ariaLiveRef.current.textContent = "Starting micro-burst practice";
-                          }
-                        }}
-                      >
-                        Start
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <h3 className="font-bold mb-3">Sound Recognition</h3>
-                    <p className="text-sm mb-3">Focus on distinguishing between similar sound patterns. Builds neural pathways for faster recognition.</p>
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm">5 minutes</div>
-                      <button
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                        aria-label="Start sound recognition drill"
-                        onClick={() => {
-                          initializeAudioContext();
-                          // In a full implementation, this would start a pattern recognition exercise
-                          if (ariaLiveRef.current) {
-                            ariaLiveRef.current.textContent = "Starting sound recognition drill";
-                          }
-                        }}
-                      >
-                        Start
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <h3 className="font-bold mb-3">Characters to Practice</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mb-6 max-h-64 overflow-y-auto pr-2">
-                  {Object.entries(characterMastery)
-                    .filter(([_, data]) => data.introduced)
-                    .map(([char, data]) => (
-                      <button 
-                        key={char}
-                        className={`p-2 rounded-lg text-center ${
-                          preferences.colorMode === 'dark' 
-                            ? 'bg-gray-700 hover:bg-gray-600 cursor-pointer' 
-                            : 'bg-gray-100 hover:bg-gray-200 cursor-pointer'
-                        }`}
-                        onClick={() => {
-                          initializeAudioContext();
-                          playMorseSound(morseCodeMap[char]);
-                          triggerHaptic(morseCodeMap[char]);
-                        }}
-                        aria-label={`Practice letter ${char}`}
-                      >
-                        <div className="flex justify-center items-center">
-                          <div className="text-2xl font-mono font-bold">{char}</div>
-                          <div className="ml-2 w-2 h-2 rounded-full" style={{
-                            backgroundColor: data.mastery > 0.8 ? '#10B981' : 
-                                            data.mastery > 0.5 ? '#FBBF24' : '#EF4444'
-                          }} aria-hidden="true"></div>
-                        </div>
-                        <div className="text-xs mt-1 text-indigo-300">
-                          {getDisplayMorse(char)}
-                        </div>
-                      </button>
-                    ))}
-                </div>
-                
-                <h3 className="font-bold mb-3">Audio Training Drills</h3>
-                <div className="space-y-3">
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  } flex justify-between items-center`}>
-                    <div>
-                      <h4 className="font-bold">Audio → Visual Drill</h4>
-                      <p className="text-sm">Hear a character, then identify its visual representation</p>
-                    </div>
-                    <button
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      aria-label="Start audio to visual drill"
-                      onClick={() => {
-                        initializeAudioContext();
-                        // In a full implementation, this would start an audio-to-visual drill
-                        if (ariaLiveRef.current) {
-                          ariaLiveRef.current.textContent = "Starting audio to visual drill";
-                        }
-                      }}
-                    >
-                      Start
-                    </button>
-                  </div>
-                  
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  } flex justify-between items-center`}>
-                    <div>
-                      <h4 className="font-bold">Ear Training Challenge</h4>
-                      <p className="text-sm">Identify characters by sound only, without visual aids</p>
-                    </div>
-                    <button
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                      aria-label="Start ear training challenge"
-                      onClick={() => {
-                        initializeAudioContext();
-                        // In a full implementation, this would start an audio-only drill
-                        if (ariaLiveRef.current) {
-                          ariaLiveRef.current.textContent = "Starting ear training challenge";
-                        }
-                      }}
-                    >
-                      Start
-                    </button>
-                  </div>
-                  
-                  {preferences.hapticEnabled && (
-                    <div className={`p-4 rounded-lg ${
-                      preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                    } flex justify-between items-center`}>
-                      <div>
-                        <h4 className="font-bold">Haptic Drill</h4>
-                        <p className="text-sm">Feel a pattern, then identify the character</p>
-                      </div>
-                      <button
-                        className="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                        aria-label="Start haptic drill"
-                        onClick={() => {
-                          // In a full implementation, this would start a haptic exercise
-                          if (ariaLiveRef.current) {
-                            ariaLiveRef.current.textContent = "Starting haptic drill";
-                          }
-                        }}
-                      >
-                        Start
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {currentTab === 'progress' && (
-            <div className="space-y-6">
-              <div className={`${
-                preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-              } rounded-xl shadow-md p-6`}>
-                <h2 className="text-xl font-bold mb-4">Your Learning Progress</h2>
-                
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <h3 className="font-bold mb-1">Course Progress</h3>
-                    <div className="text-3xl font-bold mb-2">{Math.round((currentDay - 1) / dailyLessons.length * 100)}%</div>
-                    <div className="w-full bg-gray-600 rounded-full h-2 mb-1"
-                         role="progressbar"
-                         aria-valuenow={Math.round((currentDay - 1) / dailyLessons.length * 100)}
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                      <div 
-                        className="bg-indigo-500 h-2 rounded-full"
-                        style={{ width: `${(currentDay - 1) / dailyLessons.length * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm">Day {currentDay - 1} of {dailyLessons.length}</div>
-                  </div>
-                  
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <h3 className="font-bold mb-1">Character Mastery</h3>
-                    <div className="text-3xl font-bold mb-2">
-                      {Math.round(Object.values(characterMastery).reduce((sum, char) => sum + char.mastery, 0) / 
-                      Object.values(characterMastery).length * 100)}%
-                    </div>
-                    <div className="w-full bg-gray-600 rounded-full h-2 mb-1"
-                         role="progressbar"
-                         aria-valuenow={Math.round(Object.values(characterMastery).reduce((sum, char) => sum + char.mastery, 0) / 
-                           Object.values(characterMastery).length * 100)}
-                         aria-valuemin="0"
-                         aria-valuemax="100">
-                      <div 
-                        className="bg-green-500 h-2 rounded-full"
-                        style={{ width: `${Object.values(characterMastery).reduce((sum, char) => sum + char.mastery, 0) / 
-                          Object.values(characterMastery).length * 100}%` }}
-                      ></div>
-                    </div>
-                    <div className="text-sm">{Object.values(characterMastery).filter(char => char.mastery > 0.8).length} characters mastered</div>
-                  </div>
-                  
-                  <div className={`p-4 rounded-lg ${
-                    preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                  }`}>
-                    <h3 className="font-bold mb-1">Practice Consistency</h3>
-                    <div className="text-3xl font-bold mb-2">{streakDays}</div>
-                    <div className="flex justify-between">
-                      {[...Array(7)].map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`w-8 h-8 rounded-md flex items-center justify-center ${
-                            i < streakDays % 7
-                              ? 'bg-indigo-600 text-white'
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-600 text-gray-400'
-                                : 'bg-gray-300 text-gray-600'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          {i < streakDays % 7 ? <CheckCircle size={16} /> : ""}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-sm mt-1">Current streak</div>
-                  </div>
-                </div>
-                
-                <h3 className="font-bold mb-3">Character Mastery Details</h3>
-                <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-2">
-                  {patternFamilies.map((family, idx) => (
-                    <div 
-                      key={idx}
-                      className={`p-4 rounded-lg ${
-                        preferences.colorMode === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
-                      }`}
-                    >
-                      <h4 className="font-bold mb-2">{family.name}</h4>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        {family.characters.map((char) => {
-                          const charData = characterMastery[char.char];
-                          return (
-                            <div key={char.char} className="flex items-center">
-                              <div className="text-xl font-mono font-bold mr-2">{char.char}</div>
-                              <div className="flex-1">
-                                <div className="w-full bg-gray-600 rounded-full h-2 mb-1"
-                                     role="progressbar"
-                                     aria-valuenow={Math.round((charData?.mastery || 0) * 100)}
-                                     aria-valuemin="0"
-                                     aria-valuemax="100"
-                                     aria-label={`Character ${char.char} mastery level ${Math.round((charData?.mastery || 0) * 100)}%`}>
-                                  <div 
-                                    className={`h-2 rounded-full ${
-                                      charData?.mastery > 0.8 ? 'bg-green-500' : 
-                                      charData?.mastery > 0.5 ? 'bg-yellow-500' : 
-                                      charData?.mastery > 0 ? 'bg-red-500' : 'bg-gray-500'
-                                    }`}
-                                    style={{ width: `${(charData?.mastery || 0) * 100}%` }}
-                                  ></div>
-                                </div>
-                                <div className="text-xs">
-                                  {charData?.introduced ? `${Math.round((charData?.mastery || 0) * 100)}%` : 'Locked'}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <h3 className="font-bold mb-3">Unlocked Achievements</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {rewards.map((badge, idx) => (
-                    <div 
-                      key={idx}
-                      className={`p-3 rounded-lg text-center ${
-                        preferences.colorMode === 'dark' ? 'bg-indigo-900 bg-opacity-30' : 'bg-indigo-100'
-                      }`}
-                    >
-                      <div className="text-2xl mb-1" aria-hidden="true">🏆</div>
-                      <div className="font-bold">{badge}</div>
-                    </div>
-                  ))}
-                  
-                  {/* Placeholder for locked achievements */}
-                  {[...Array(Math.max(0, 4 - rewards.length))].map((_, idx) => (
-                    <div 
-                      key={`locked-${idx}`}
-                      className={`p-3 rounded-lg text-center ${
-                        preferences.colorMode === 'dark' ? 'bg-gray-700 opacity-50' : 'bg-gray-200 opacity-50'
-                      }`}
-                      aria-hidden="true"
-                    >
-                      <div className="text-2xl mb-1">🔒</div>
-                      <div className="font-bold">???</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {currentTab === 'settings' && (
-            <div className={`${
-              preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-            } rounded-xl shadow-md p-6`}>
-              <h2 className="text-xl font-bold mb-6">Settings & Preferences</h2>
-              
-              <div className="space-y-8">
-                <div>
-                  <h3 className="font-bold mb-3">Visual Preferences</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Color Mode</label>
-                      <div className="flex space-x-3">
-                        <button 
-                          onClick={() => updatePreference('colorMode', 'light')}
-                          className={`px-3 py-1 rounded-lg text-sm ${
-                            preferences.colorMode === 'light' 
-                              ? 'bg-indigo-600 text-white' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-200 text-gray-700'
-                          }`}
-                          aria-label="Set light color mode"
-                        >
-                          Light
-                        </button>
-                        <button 
-                          onClick={() => updatePreference('colorMode', 'dark')}
-                          className={`px-3 py-1 rounded-lg text-sm ${
-                            preferences.colorMode === 'dark' 
-                              ? 'bg-indigo-600 text-white' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-200 text-gray-700'
-                          }`}
-                          aria-label="Set dark color mode"
-                        >
-                          Dark
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Visual Style</label>
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => updatePreference('visualStyle', 'standard')}
-                          className={`px-3 py-1 rounded-lg text-sm ${
-                            preferences.visualStyle === 'standard' 
-                              ? 'bg-indigo-600 text-white' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-200 text-gray-700'
-                          }`}
-                          aria-label="Set standard visual style"
-                        >
-                          Standard
-                        </button>
-                        <button 
-                          onClick={() => updatePreference('visualStyle', 'high-contrast')}
-                          className={`px-3 py-1 rounded-lg text-sm ${
-                            preferences.visualStyle === 'high-contrast' 
-                              ? 'bg-indigo-600 text-white' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-200 text-gray-700'
-                          }`}
-                          aria-label="Set high contrast visual style"
-                        >
-                          High Contrast
-                        </button>
-                        <button 
-                          onClick={() => updatePreference('visualStyle', 'dyslexia-friendly')}
-                          className={`px-3 py-1 rounded-lg text-sm ${
-                            preferences.visualStyle === 'dyslexia-friendly' 
-                              ? 'bg-indigo-600 text-white' 
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-300'
-                                : 'bg-gray-200 text-gray-700'
-                          }`}
-                          aria-label="Set dyslexia friendly visual style"
-                        >
-                          Dyslexia Friendly
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold mb-3">Audio Preferences</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Sound Volume</label>
-                      <div className="flex items-center space-x-2">
-                        <VolumeX size={18} aria-hidden="true" />
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="100" 
-                          value={preferences.soundVolume} 
-                          onChange={(e) => updatePreference('soundVolume', parseInt(e.target.value))}
-                          className="w-48"
-                          aria-label="Sound volume slider"
-                        />
-                        <Volume2 size={18} aria-hidden="true" />
-                        <span className="w-8 text-right">{preferences.soundVolume}%</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Sound Pitch (Hz)</label>
-                      <div className="flex items-center space-x-2">
-                        <input 
-                          type="range" 
-                          min="300" 
-                          max="1000" 
-                          step="20"
-                          value={preferences.soundPitch} 
-                          onChange={(e) => updatePreference('soundPitch', parseInt(e.target.value))}
-                          className="w-48"
-                          aria-label="Sound pitch slider"
-                        />
-                        <span className="w-12 text-right">{preferences.soundPitch}Hz</span>
-                      </div>
-                      <p className={`text-xs mt-1 ${
-                        preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                      }`}>
-                        Find a pitch that works best for your hearing sensitivity
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Morse Code Timing</label>
-                      <div className="space-y-3">
-                        <div>
-                          <p className="text-sm">Character Speed (Fixed for Koch method)</p>
-                          <div className="flex items-center space-x-2">
-                            <input 
-                              type="range" 
-                              min="15" 
-                              max="25" 
-                              step="1"
-                              value={preferences.charSpeed} 
-                              onChange={(e) => updatePreference('charSpeed', parseInt(e.target.value))}
-                              className="w-48"
-                              aria-label="Character speed slider"
-                              disabled
-                            />
-                            <span className="w-16 text-right">{preferences.charSpeed} WPM</span>
-                          </div>
-                        </div>
-                        
-                        <div>
-                          <p className="text-sm">Effective Speed (Farnsworth spacing)</p>
-                          <div className="flex items-center space-x-2">
-                            <input 
-                              type="range" 
-                              min="5" 
-                              max={preferences.charSpeed} 
-                              step="1"
-                              value={preferences.effectiveSpeed} 
-                              onChange={(e) => updatePreference('effectiveSpeed', parseInt(e.target.value))}
-                              className="w-48"
-                              aria-label="Effective speed slider"
-                            />
-                            <span className="w-16 text-right">{preferences.effectiveSpeed} WPM</span>
-                          </div>
-                          <p className={`text-xs mt-1 ${
-                            preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                          }`}>
-                            Lower effective speed means more time between characters
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold mb-3">Haptic Feedback</h3>
-                  
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="haptic-toggle"
-                      checked={preferences.hapticEnabled}
-                      onChange={(e) => updatePreference('hapticEnabled', e.target.checked)}
-                      className="h-4 w-4 rounded"
-                      aria-label="Enable haptic feedback"
-                    />
-                    <label htmlFor="haptic-toggle" className="text-sm">
-                      Enable haptic feedback (requires compatible device)
-                    </label>
-                  </div>
-                  
-                  <p className={`text-sm mt-2 ${
-                    preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                  }`}>
-                    Connect to a haptic device or use phone vibration for tactile learning.
-                  </p>
-                </div>
-                
-                <div>
-                  <h3 className="font-bold mb-3">Session Settings</h3>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Daily Session Length</label>
-                    <div className="flex items-center space-x-3">
-                      <input 
-                        type="range" 
-                        min="5" 
-                        max="25" 
-                        step="5" 
-                        value={preferences.sessionLength} 
-                        onChange={(e) => updatePreference('sessionLength', parseInt(e.target.value))}
-                        className="w-48"
-                        aria-label="Session length slider"
-                      />
-                      <span className="w-16">{preferences.sessionLength} min</span>
-                    </div>
-                    <p className={`text-xs mt-1 ${
-                      preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-600'
-                    }`}>
-                      Research shows 10-20 minutes daily is optimal for AuDHD learners
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="pt-4 flex justify-end">
-                  <button 
-                    onClick={() => setCurrentTab('learn')} 
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-                    aria-label="Save settings and go to learn tab"
-                  >
-                    Save Settings
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
-        
-        {/* Bottom Navigation */}
-        <nav className={`${
-          preferences.colorMode === 'dark' ? 'bg-gray-800' : 'bg-white'
-        } border-t ${
-          preferences.colorMode === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        } p-3`}>
-          <div className="flex justify-around">
-            <button 
-              onClick={() => {
-                setCurrentTab('home');
-                setCurrentLesson(null);
-              }}
-              className={`flex flex-col items-center p-1 ${
-                currentTab === 'home' 
-                  ? 'text-indigo-500' 
-                  : preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              aria-label="Home tab"
-              aria-current={currentTab === 'home' ? 'page' : undefined}
-            >
-              <Home size={24} aria-hidden="true" />
-              <span className="text-xs mt-1">Home</span>
-            </button>
-            <button 
-              onClick={() => {
-                setCurrentTab('learn');
-                setCurrentLesson(null);
-              }}
-              className={`flex flex-col items-center p-1 ${
-                currentTab === 'learn' 
-                  ? 'text-indigo-500' 
-                  : preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              aria-label="Learn tab"
-              aria-current={currentTab === 'learn' ? 'page' : undefined}
-            >
-              <Book size={24} aria-hidden="true" />
-              <span className="text-xs mt-1">Learn</span>
-            </button>
-            <button 
-              onClick={() => setCurrentTab('practice')}
-              className={`flex flex-col items-center p-1 ${
-                currentTab === 'practice' 
-                  ? 'text-indigo-500' 
-                  : preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              aria-label="Practice tab"
-              aria-current={currentTab === 'practice' ? 'page' : undefined}
-            >
-              <Activity size={24} aria-hidden="true" />
-              <span className="text-xs mt-1">Practice</span>
-            </button>
-            <button 
-              onClick={() => setCurrentTab('progress')}
-              className={`flex flex-col items-center p-1 ${
-                currentTab === 'progress' 
-                  ? 'text-indigo-500' 
-                  : preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              aria-label="Progress tab"
-              aria-current={currentTab === 'progress' ? 'page' : undefined}
-            >
-              <Award size={24} aria-hidden="true" />
-              <span className="text-xs mt-1">Progress</span>
-            </button>
-            <button 
-              onClick={() => setCurrentTab('settings')}
-              className={`flex flex-col items-center p-1 ${
-                currentTab === 'settings' 
-                  ? 'text-indigo-500' 
-                  : preferences.colorMode === 'dark' ? 'text-gray-400' : 'text-gray-500'
-              }`}
-              aria-label="Settings tab"
-              aria-current={currentTab === 'settings' ? 'page' : undefined}
-            >
-              <Settings size={24} aria-hidden="true" />
-              <span className="text-xs mt-1">Settings</span>
-            </button>
-          </div>
-        </nav>
-      </div>
-    </AppContext.Provider>
-  );
-};
-
-export default MorseCodeApp;

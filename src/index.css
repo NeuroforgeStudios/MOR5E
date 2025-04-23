@@ -43,3 +43,75 @@ html, body {
     scroll-behavior: auto !important;
   }
 }
+
+/* PIPboy theme styles */
+.pipboy-theme {
+  position: relative;
+  background-color: black;
+  color: #2bff2b;
+  text-shadow: 0 0 8px rgba(43, 255, 43, 0.6);
+  font-family: 'Roboto Mono', monospace;
+  overflow: hidden;
+}
+
+.pipboy-theme::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.15),
+    rgba(0, 0, 0, 0.15) 1px,
+    transparent 1px,
+    transparent 2px
+  );
+  pointer-events: none;
+  z-index: 100;
+}
+
+.pipboy-theme::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(
+    circle at center,
+    transparent 0%,
+    rgba(0, 40, 0, 0.4) 100%
+  );
+  pointer-events: none;
+  z-index: 101;
+}
+
+.pipboy-theme input[type="range"] {
+  -webkit-appearance: none;
+  background: #053305;
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+}
+
+.pipboy-theme input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%; 
+  background: #3fff3f;
+  box-shadow: 0 0 5px #3fff3f, 0 0 10px #3fff3f;
+  cursor: pointer;
+}
+
+.pipboy-theme input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #3fff3f;
+  box-shadow: 0 0 5px #3fff3f, 0 0 10px #3fff3f;
+  cursor: pointer;
+}
