@@ -35,6 +35,7 @@ html, body {
   outline-offset: 2px;
 }
 
+/* For users who prefer reduced motion */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;
@@ -42,6 +43,45 @@ html, body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* AuDHD-friendly styles */
+/* Reducing visual noise and providing clear visual focus */
+input[type="range"] {
+  height: 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%; 
+  background: #4f46e5;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #4f46e5;
+  border: none;
+  cursor: pointer;
+}
+
+/* Slight animation reduction for AuDHD focus */
+.transition-colors {
+  transition-duration: 0.2s !important;
+}
+
+/* Ensuring high contrast in interactive elements */
+button:not(:disabled):active {
+  transform: scale(0.98);
 }
 
 /* PIPboy theme styles */
@@ -114,4 +154,56 @@ html, body {
   background: #3fff3f;
   box-shadow: 0 0 5px #3fff3f, 0 0 10px #3fff3f;
   cursor: pointer;
+}
+
+/* Subtle animations for review cycle indicators */
+@keyframes pulse-review {
+  0% { opacity: 0.7; }
+  50% { opacity: 1; }
+  100% { opacity: 0.7; }
+}
+
+.review-indicator {
+  animation: pulse-review 2s infinite;
+}
+
+/* AuDHD-friendly input styles for reduced visual stress */
+input[type="range"]:focus {
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.4);
+}
+
+.pipboy-theme input[type="range"]:focus {
+  box-shadow: 0 0 0 2px rgba(63, 255, 63, 0.4);
+}
+
+/* Subtle background pattern for pattern recognition sections */
+.pattern-bg {
+  background-image: radial-gradient(rgba(79, 70, 229, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.pipboy-theme .pattern-bg {
+  background-image: radial-gradient(rgba(43, 255, 43, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Focus indicators for visual tracking */
+.active-char {
+  position: relative;
+}
+
+.active-char::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 25%;
+  width: 50%;
+  height: 3px;
+  background-color: #4f46e5;
+  border-radius: 2px;
+}
+
+.pipboy-theme .active-char::after {
+  background-color: #3fff3f;
+  box-shadow: 0 0 5px #3fff3f;
 }
