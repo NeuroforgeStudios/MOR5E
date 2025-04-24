@@ -4,25 +4,48 @@ import {
   Home, Award, Calendar, Clock, CheckCircle, Circle,
   RotateCcw, ArrowRight, AlertCircle, HelpCircle, Zap,
   Star, Lock, Unlock, PlusCircle, Vibrate, Headphones,
-  Volume1, VolumeX, Ear, Info, MessageCircle, Lightbulb
+  Volume1, VolumeX, Ear, Info, MessageCircle, Lightbulb,
+  RefreshCw, BookOpen
 } from 'lucide-react';
 
 // Create context for global state
 const AppContext = createContext();
 
-// Define the Morse code for each character using the LCWO.net character progression
+// Define the Morse code for each character
 const morseCodeMap = {
-  'K': '-.-', 'M': '--', 'U': '..-', 'R': '.-.', 'E': '.', 
-  'S': '...', 'N': '-.', 'A': '.-', 'P': '.--.', 'T': '-', 
-  'L': '.-..', 'W': '.--', 'I': '..', '.': '.-.-.-', 'J': '.---', 
-  'Z': '--..', '=': '-...-', 'F': '..-.', 'O': '---', 'Y': '-.--', 
-  ',': '--..--', 'V': '...-', 'G': '--.', '5': '.....', '/': '-..-.',
-  'Q': '--.-', '9': '----.', '2': '..---', 'H': '....', '3': '...--',
-  '8': '---..',  'B': '-...', '?': '..--..', '4': '....-', '7': '--...',
-  'C': '-.-.', '1': '.----', 'D': '-..', '6': '-....', '0': '-----', 'X': '-..-'
+  'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.', 
+  'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---', 
+  'K': '-.-', 'L': '.-..', 'M': '--', 'N': '-.', 'O': '---', 
+  'P': '.--.', 'Q': '--.-', 'R': '.-.', 'S': '...', 'T': '-', 
+  'U': '..-', 'V': '...-', 'W': '.--', 'X': '-..-', 'Y': '-.--', 
+  'Z': '--..', '0': '-----', '1': '.----', '2': '..---', 
+  '3': '...--', '4': '....-', '5': '.....', '6': '-....', 
+  '7': '--...', '8': '---..', '9': '----.', '.': '.-.-.-',
+  ',': '--..--', '?': '..--..'
 };
 
-// LCWO.net character progression (Koch method)
+// AuDHD-Optimized Learning Sequence
+const auDHDOptimizedProgression = [
+  'E', 'T', 'A', 'N', // Initial characters with strong contrast
+  'I', 'M', 'S', 'O', // Second group - extending patterns
+  'R', 'K', 'D',      // Third group - building complexity
+  'U', 'G', 'W',      // Fourth group - more complex patterns
+  'H', 'B', 'L',      // Fifth group - extending sequences
+  'F', 'P', 'V',      // Sixth group - internal patterns
+  'J', 'C', 'Y',      // Seventh group - related patterns
+  'Q', 'X', 'Z',      // Final letters - complex patterns
+  '5', '0',           // Numbers part 1 - pattern extremes
+  '1', '9',           // Numbers part 2 - opposites with one change
+  '2', '8',           // Numbers part 3 - opposites with two changes
+  '3', '7',           // Numbers part 4 - opposites with three changes
+  '4', '6',           // Numbers part 5 - opposites with four changes
+  '.', ',', '?'       // Essential punctuation
+];
+
+// Define review cycle points - after these indices in the progression
+const reviewPoints = [3, 7, 10, 13, 16, 19, 22, 25, 27, 29, 31, 33, 36];
+
+// Traditional Koch method progression
 const kochMethodProgression = [
   'K', 'M', 'U', 'R', 'E', 'S', 'N', 'A', 'P', 'T', 
   'L', 'W', 'I', '.', 'J', 'Z', '=', 'F', 'O', 'Y', 
@@ -30,7 +53,7 @@ const kochMethodProgression = [
   '8', 'B', '?', '4', '7', 'C', '1', 'D', '6', '0', 'X'
 ];
 
-// Logical learning path progression
+// Logical learning path progression (original)
 const logicalMethodProgression = [
   'T', 'E', 'A', 'N', 'I', 'M', 'S', 'O', 'R', 'K',
   'L', 'U', 'D', 'G', 'F', 'Y', 'C', 'Q', 'B', 'X',
@@ -43,10 +66,10 @@ const getDisplayMorse = (char) => {
   return morseCodeMap[char]?.replace(/\./g, '•').replace(/\-/g, '−') || '';
 };
 
-// Group characters into logical families based on Koch method pedagogy
+// Group characters into logical families based on pattern relationships
 const generatePatternFamilies = (progression) => {
   const patternFamilies = [];
-  const familySize = 5; // Number of characters per family
+  const familySize = 4; // Number of characters per family
 
   // Create pattern families from the character progression
   for (let i = 0; i < progression.length; i += familySize) {
@@ -65,13 +88,15 @@ const generatePatternFamilies = (progression) => {
   return patternFamilies;
 };
 
-// Generate daily lessons dynamically based on the character progression
+// Generate daily lessons dynamically based on the character progression with review cycles
 const generateDailyLessons = (progression, learningMethod) => {
   const lessons = [];
-  
+  let lessonDay = 1;
+  let prevLearnedChars = [];
+
   // Day 1: Introduction and first character
   lessons.push({
-    day: 1,
+    day: lessonDay++,
     title: `Introduction to Morse & Letter ${progression[0]}`,
     description: `Learn the basics of Morse code and your first letter: ${progression[0]} (${getDisplayMorse(progression[0])})`,
     duration: 15,
@@ -126,27 +151,67 @@ const generateDailyLessons = (progression, learningMethod) => {
     totalPoints: 25
   });
   
+  prevLearnedChars.push(progression[0]);
+  
   // For each subsequent character, create a lesson
   for (let i = 1; i < progression.length; i++) {
-    let currentChar;
-    let previousChars;
-    let lastChar;
-    let title;
+    const currentChar = progression[i];
+    const previousChars = progression.slice(0, i);
+    const lastChar = previousChars[previousChars.length - 1];
     
-    // For logical method, group characters in pairs after the first one
-    if (learningMethod === 'Logical' && i % 2 === 1 && i+1 < progression.length) {
-      currentChar = [progression[i], progression[i+1]];
-      previousChars = progression.slice(0, i);
-      lastChar = previousChars[previousChars.length - 1];
-      title = `Letters ${progression[i]} & ${progression[i+1]}`;
-      i++; // Skip the next character as we've included it in this lesson
-    } else {
-      currentChar = progression[i];
-      previousChars = progression.slice(0, i);
-      lastChar = previousChars[previousChars.length - 1];
-      title = `Letter ${currentChar} & Practice`;
+    // Check if we need a review cycle before this character
+    const needsReview = reviewPoints.includes(i - 1);
+    
+    // If a review is needed, add a review lesson
+    if (needsReview) {
+      // Determine which characters to review (last 4 or all if fewer than 4)
+      const reviewChars = prevLearnedChars.slice(-Math.min(prevLearnedChars.length, 4));
+      
+      // Create review lesson
+      lessons.push({
+        day: lessonDay++,
+        title: `Review Cycle #${reviewPoints.indexOf(i - 1) + 1}`,
+        description: `Reinforce your knowledge of ${reviewChars.join(', ')}`,
+        duration: 15,
+        exercises: [
+          {
+            type: "intro",
+            title: "Review Cycle",
+            content: `Research shows that strategic review is crucial for AuDHD learners. Today we'll reinforce your knowledge of ${reviewChars.join(', ')} before learning new characters.`,
+            duration: 2
+          },
+          {
+            type: "review",
+            chars: reviewChars,
+            reps: 8,
+            duration: 3
+          },
+          {
+            type: "contrastPractice",
+            chars: reviewChars,
+            sets: 6,
+            duration: 4
+          },
+          {
+            type: "multiCharPractice",
+            chars: reviewChars,
+            sets: 5,
+            duration: 4
+          },
+          {
+            type: "reward",
+            title: "Review Completed!",
+            content: `You've reinforced your knowledge of ${reviewChars.join(', ')}`,
+            points: 15,
+            badge: `review_cycle_${reviewPoints.indexOf(i - 1) + 1}`,
+            duration: 2
+          }
+        ],
+        totalPoints: 20
+      });
     }
     
+    // Add the regular lesson for the current character
     const exercises = [];
     
     // Review previous character(s)
@@ -157,71 +222,61 @@ const generateDailyLessons = (progression, learningMethod) => {
       duration: 2
     });
     
-    // Introduce new character(s)
-    if (Array.isArray(currentChar)) {
-      // For paired characters in logical method
-      currentChar.forEach(char => {
-        exercises.push({
-          type: "character",
-          char: char,
-          morse: getDisplayMorse(char),
-          mnemonic: `${char} sounds like '${morseCodeMap[char].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
-          duration: 3
-        });
-      });
-      
-      // Flash practice with new characters
+    // Introduce new character
+    exercises.push({
+      type: "character",
+      char: currentChar,
+      morse: getDisplayMorse(currentChar),
+      mnemonic: `${currentChar} sounds like '${morseCodeMap[currentChar].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
+      duration: 3
+    });
+    
+    // Flash practice with new character
+    exercises.push({
+      type: "flashPractice",
+      char: currentChar,
+      reps: 10,
+      interval: 3,
+      duration: 3
+    });
+    
+    // Add pattern explanation for this character
+    let patternExplanation = "";
+    if (currentChar === 'T') {
+      patternExplanation = "T (−) is a single dash, the complete opposite of E (•). This contrast helps your brain distinguish between the two basic elements.";
+    } else if (currentChar === 'A') {
+      patternExplanation = "A (•−) combines the dot from E with the dash from T, creating a new pattern that builds on what you've learned.";
+    } else if (currentChar === 'N') {
+      patternExplanation = "N (−•) is the mirror image of A (•−), creating a pattern relationship that's easier for AuDHD brains to recognize.";
+    } else if (['I', 'M'].includes(currentChar)) {
+      patternExplanation = `${currentChar} is a pattern extension of ${currentChar === 'I' ? 'E' : 'T'}, repeating the same element twice.`;
+    } else if (['S', 'O'].includes(currentChar)) {
+      patternExplanation = `${currentChar} extends the pattern of ${currentChar === 'S' ? 'I' : 'M'} to three elements, creating a distinctive rhythm.`;
+    } else if (['R', 'K'].includes(currentChar)) {
+      patternExplanation = `${currentChar} has a symmetric pattern that ${currentChar === 'R' ? 'builds on A' : 'mirrors R'}, helping with pattern recognition.`;
+    }
+    
+    if (patternExplanation) {
       exercises.push({
-        type: "flashPractice",
-        chars: currentChar,
-        reps: 10,
-        interval: 3,
-        duration: 3
-      });
-      
-      // Contrast practice with new and previously learned characters
-      exercises.push({
-        type: "contrastPractice",
-        chars: [...currentChar, lastChar],
-        sets: 5,
-        duration: 3
-      });
-    } else {
-      // Single character introduction (Koch method style)
-      exercises.push({
-        type: "character",
-        char: currentChar,
-        morse: getDisplayMorse(currentChar),
-        mnemonic: `${currentChar} sounds like '${morseCodeMap[currentChar].replace(/\./g, 'di').replace(/\-/g, 'dah')}'`,
-        duration: 3
-      });
-      
-      // Flash practice with new character
-      exercises.push({
-        type: "flashPractice",
-        char: currentChar,
-        reps: 10,
-        interval: 3,
-        duration: 3
-      });
-      
-      // Contrast practice with new and previously learned characters
-      exercises.push({
-        type: "contrastPractice",
-        chars: [currentChar, lastChar],
-        sets: 5,
-        duration: 3
+        type: "patternIntro",
+        title: "Pattern Relationship",
+        content: patternExplanation,
+        duration: 2
       });
     }
     
-    // Multi-character practice with all learned characters
-    const allChars = Array.isArray(currentChar) 
-      ? [...previousChars, ...currentChar] 
-      : [...previousChars, currentChar];
+    // Contrast practice with new and previously learned characters
+    exercises.push({
+      type: "contrastPractice",
+      chars: [currentChar, lastChar],
+      sets: 5,
+      duration: 3
+    });
     
+    // Multi-character practice with previously learned characters
     exercises.push({
       type: "multiCharPractice",
-      chars: allChars,
+      chars: [...previousChars.slice(-3), currentChar],
       sets: 3,
       duration: 3
     });
@@ -229,30 +284,68 @@ const generateDailyLessons = (progression, learningMethod) => {
     // Reward
     exercises.push({
       type: "reward",
-      title: Array.isArray(currentChar) 
-        ? `Characters ${i-currentChar.length+1}-${i} Mastered!` 
-        : `Character ${i+1} Mastered!`,
-      content: Array.isArray(currentChar)
-        ? `You've learned ${currentChar.join(' and ')} and can now recognize ${i+1} Morse code characters!`
-        : `You've learned ${currentChar} and can now recognize ${i+1} Morse code characters!`,
+      title: `Character ${i+1} Mastered!`,
+      content: `You've learned ${currentChar} and can now recognize ${i+1} Morse code characters!`,
       points: 10 + i,
-      badge: Array.isArray(currentChar) 
-        ? `characters_${i-currentChar.length+1}_to_${i}` 
-        : `character_${i+1}`,
+      badge: `character_${i+1}`,
       duration: 1
     });
     
     lessons.push({
-      day: i + 1,
-      title: title,
-      description: Array.isArray(currentChar)
-        ? `Learn ${currentChar[0]} (${getDisplayMorse(currentChar[0])}) and ${currentChar[1]} (${getDisplayMorse(currentChar[1])}) and practice with previously learned characters`
-        : `Learn ${currentChar} (${getDisplayMorse(currentChar)}) and practice with previously learned characters`,
+      day: lessonDay++,
+      title: `Letter ${currentChar} & Practice`,
+      description: `Learn ${currentChar} (${getDisplayMorse(currentChar)}) and practice with previously learned characters`,
       duration: 15,
       exercises,
       totalPoints: 20 + i
     });
+    
+    prevLearnedChars.push(currentChar);
   }
+  
+  // Add a final comprehensive review at the end
+  const finalReviewChars = progression.slice(-10);
+  lessons.push({
+    day: lessonDay++,
+    title: "Final Comprehensive Review",
+    description: "Master all characters through comprehensive practice",
+    duration: 20,
+    exercises: [
+      {
+        type: "intro",
+        title: "Congratulations on Your Progress!",
+        content: "You've learned all the characters in the AuDHD-Optimized sequence. Now let's reinforce your knowledge with comprehensive practice.",
+        duration: 2
+      },
+      {
+        type: "review",
+        chars: finalReviewChars,
+        reps: 10,
+        duration: 4
+      },
+      {
+        type: "multiCharPractice",
+        chars: finalReviewChars,
+        sets: 8,
+        duration: 6
+      },
+      {
+        type: "comprehension",
+        chars: finalReviewChars,
+        sets: 6,
+        duration: 5
+      },
+      {
+        type: "reward",
+        title: "Morse Code Mastery Achieved!",
+        content: "You've completed the AuDHD-Optimized Morse code learning sequence. Continue practicing to increase your speed and fluency.",
+        points: 50,
+        badge: "morse_master",
+        duration: 3
+      }
+    ],
+    totalPoints: 100
+  });
   
   return lessons;
 };
@@ -341,13 +434,15 @@ const MorseCodeApp = () => {
     charSpeed: 20, // Character speed in WPM (fixed for Koch method)
     effectiveSpeed: 15, // Effective speed in WPM (adjustable for Farnsworth timing)
     reinforcementStyle: 'points',
-    learningMethod: 'Logical', // Default to Logical method
+    learningMethod: 'AuDHD', // Default to AuDHD-Optimized method
   });
   
   // Determine which character progression to use based on user preference
   const characterProgression = preferences.learningMethod === 'Koch' 
     ? kochMethodProgression 
-    : logicalMethodProgression;
+    : preferences.learningMethod === 'Logical'
+      ? logicalMethodProgression
+      : auDHDOptimizedProgression;
   
   // Generate lessons based on selected method
   const [dailyLessons, setDailyLessons] = useState(
@@ -422,23 +517,30 @@ const MorseCodeApp = () => {
   
   // Update daily lessons when learning method changes
   useEffect(() => {
+    // Determine which character progression to use based on user preference
+    const newProgression = preferences.learningMethod === 'Koch' 
+      ? kochMethodProgression 
+      : preferences.learningMethod === 'Logical'
+        ? logicalMethodProgression
+        : auDHDOptimizedProgression;
+        
     // Generate lessons based on the selected method
-    const newLessons = generateDailyLessons(characterProgression, preferences.learningMethod);
+    const newLessons = generateDailyLessons(newProgression, preferences.learningMethod);
     setDailyLessons(newLessons);
     
     // Update pattern families based on the current progression
-    const newPatternFamilies = generatePatternFamilies(characterProgression);
+    const newPatternFamilies = generatePatternFamilies(newProgression);
     setPatternFamilies(newPatternFamilies);
     
     // Reset mastery when switching methods if necessary
-    if (Object.keys(characterMastery).some(char => !characterProgression.includes(char))) {
-      const newMasteryState = initCharacterMastery(characterProgression);
+    if (Object.keys(characterMastery).some(char => !newProgression.includes(char))) {
+      const newMasteryState = initCharacterMastery(newProgression);
       dispatchMastery({ 
         type: 'RESET_MASTERY', 
         initialState: newMasteryState
       });
     }
-  }, [preferences.learningMethod, characterProgression]);
+  }, [preferences.learningMethod]);
   
   // Save state to localStorage when it changes
   useEffect(() => {
@@ -1432,7 +1534,7 @@ const MorseCodeApp = () => {
             </h3>
             
             <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-6`}>
-              Let's quickly review these characters before learning new ones.
+              Let's reinforce your knowledge of these characters through strategic review.
             </p>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -1458,12 +1560,12 @@ const MorseCodeApp = () => {
             
             <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
               <div className="flex items-center justify-center mb-2">
-                <Zap size={24} className={`${getThemeClasses('highlight')} mr-2`} />
-                <h4 className="font-bold">Spaced Repetition Boost</h4>
+                <RefreshCw size={24} className={`${getThemeClasses('highlight')} mr-2`} />
+                <h4 className="font-bold">AuDHD-Optimized Review Cycle</h4>
               </div>
               <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : 'text-gray-300'}`}>
-                Reviewing these characters now strengthens your neural pathways. 
-                Spaced repetition is proven to be highly effective for AuDHD learners!
+                Strategic review cycles are crucial for neurodivergent learners. This method reinforces pattern recognition
+                and helps build stronger neural pathways for long-term retention.
               </p>
             </div>
             
@@ -1597,25 +1699,26 @@ const MorseCodeApp = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <button
-              onClick={() => selectLearningMethod('Logical')}
+              onClick={() => selectLearningMethod('AuDHD')}
               className={`p-6 rounded-lg text-left ${preferences.colorMode === 'pipboy' ? 
-                'bg-green-900 bg-opacity-30 border border-green-600 hover:bg-green-800 hover:bg-opacity-50' : 
-                'bg-indigo-900 bg-opacity-20 border border-indigo-500 hover:bg-indigo-800 hover:bg-opacity-30'} transition-colors`}
+                'bg-green-900 bg-opacity-30 border-2 border-green-500 hover:bg-green-800 hover:bg-opacity-50' : 
+                'bg-indigo-900 bg-opacity-20 border-2 border-indigo-400 hover:bg-indigo-800 hover:bg-opacity-30'} transition-colors`}
             >
+              <div className="absolute -top-2 -right-2 bg-green-500 text-black text-xs px-2 py-1 rounded-full">Recommended</div>
               <h3 className="text-xl font-bold mb-2 flex items-center">
-                <Lightbulb size={24} className="mr-2" />
-                Logical Method
+                <BookOpen size={24} className="mr-2" />
+                AuDHD-Optimized
               </h3>
               <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-4`}>
-                Start with the simplest characters (T, E) and progressively learn more complex ones. Characters are grouped in logical pairs.
+                Specially designed progression with strategic review cycles and pattern-based learning for neurodivergent learners.
               </p>
               <div className={`mb-3 ${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-indigo-300'}`}>
-                <strong>Best for:</strong> Beginners who prefer a structured, logical progression
+                <strong>Best for:</strong> AuDHD learners who benefit from pattern recognition and reduced cognitive load
               </div>
               <div className="flex items-center text-sm">
-                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>T, E</div>
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>E, T</div>
                 <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>A, N</div>
-                <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>I, M...</div>
+                <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>Review...</div>
               </div>
             </button>
             
@@ -1641,13 +1744,36 @@ const MorseCodeApp = () => {
                 <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>E, S...</div>
               </div>
             </button>
+            
+            <button
+              onClick={() => selectLearningMethod('Logical')}
+              className={`p-6 rounded-lg text-left ${preferences.colorMode === 'pipboy' ? 
+                'bg-green-900 bg-opacity-30 border border-green-600 hover:bg-green-800 hover:bg-opacity-50' : 
+                'bg-indigo-900 bg-opacity-20 border border-indigo-500 hover:bg-indigo-800 hover:bg-opacity-30'} transition-colors`}
+            >
+              <h3 className="text-xl font-bold mb-2 flex items-center">
+                <Lightbulb size={24} className="mr-2" />
+                Logical Method
+              </h3>
+              <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'} mb-4`}>
+                Start with the simplest characters (T, E) and progressively learn more complex ones. Characters are grouped in logical pairs.
+              </p>
+              <div className={`mb-3 ${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-indigo-300'}`}>
+                <strong>Best for:</strong> Beginners who prefer a structured, logical progression
+              </div>
+              <div className="flex items-center text-sm">
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>T, E</div>
+                <div className={`mr-2 px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>A, N</div>
+                <div className={`px-2 py-1 rounded ${preferences.colorMode === 'pipboy' ? 'bg-green-800' : 'bg-indigo-800'}`}>I, M...</div>
+              </div>
+            </button>
           </div>
           
           <div className={`${getThemeClasses('panel')} p-4 rounded-lg mb-6`}>
             <div className="flex items-center">
               <Info size={20} className={`${getThemeClasses('highlight')} mr-2`} />
               <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-300'}`}>
-                Both methods use the same learning principles (Koch method with Farnsworth timing) but differ in the order characters are introduced.
+                All methods use the same learning principles (Koch method with Farnsworth timing) but differ in the order characters are introduced and how review is structured.
               </p>
             </div>
           </div>
@@ -1678,6 +1804,9 @@ const MorseCodeApp = () => {
           aria-live="polite"
           aria-atomic="true"
         ></div>
+        
+        {/* Render path selection dialog */}
+        {renderPathSelection()}
         
         {/* App Header */}
         <header className={`${getThemeClasses('header')} text-white p-4 shadow-md`}>
@@ -1743,7 +1872,33 @@ const MorseCodeApp = () => {
             </div>
           )}
         
-          {currentTab === 'home' && (
+          {/* Learning Content */}
+          {currentLesson ? (
+            <div className="space-y-6">
+              <div className={`${getThemeClasses('card')} rounded-xl shadow-md p-6`}>
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold">Day {currentLesson.day}: {currentLesson.title}</h2>
+                    <p className={getThemeClasses('muted')}>{currentLesson.description}</p>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock size={18} className="mr-1" aria-hidden="true" />
+                    <span>{currentLesson.duration} min</span>
+                  </div>
+                </div>
+                
+                <div className="h-2 bg-gray-700 rounded-full overflow-hidden mb-6">
+                  <div 
+                    className={`h-2 ${getThemeClasses('progressBar')} rounded-full`}
+                    style={{ width: `${sessionProgress}%` }}
+                    aria-label={`Lesson progress: ${sessionProgress}%`}
+                  ></div>
+                </div>
+                
+                {renderExerciseContent()}
+              </div>
+            </div>
+          ) : currentTab === 'home' ? (
             <div className="space-y-6">
               <div className={`${getThemeClasses('card')} rounded-xl shadow-md p-6`}>
                 <h2 className="text-xl font-bold mb-4">Your Morse Journey</h2>
@@ -1774,184 +1929,3 @@ const MorseCodeApp = () => {
                       <div className="text-sm">points</div>
                     </div>
                   </div>
-                </div>
-                
-                <div className={`p-4 rounded-lg mb-4 ${getThemeClasses('panel')}`}>
-                  <h3 className="font-bold mb-2">Today's Goal</h3>
-                  <p className="mb-3">Complete your daily {preferences.sessionLength}-minute Morse session</p>
-                  <div className="flex justify-between">
-                    <button
-                      onClick={() => {
-                        setCurrentTab('learn');
-                        const nextLesson = lastCompleted === new Date().toISOString().split('T')[0]
-                          ? currentDay + 1 
-                          : currentDay;
-                        startLesson(nextLesson);
-                      }}
-                      className={`px-4 py-2 ${getThemeClasses('button')} rounded-lg transition-colors`}
-                      aria-label="Start today's lesson"
-                    >
-                      Start Today's Lesson
-                    </button>
-                    
-                    <button
-                      onClick={() => setCurrentTab('practice')}
-                      className={`px-4 py-2 rounded-lg ${getThemeClasses('secondaryButton')} transition-colors`}
-                      aria-label="Go to quick practice"
-                    >
-                      Quick Practice
-                    </button>
-                  </div>
-                </div>
-                
-                <div className={`p-4 rounded-lg mb-6 ${getThemeClasses('panel')}`}>
-                  <div className="flex items-center mb-3">
-                    <Info size={18} className={`${getThemeClasses('highlight')} mr-2`} />
-                    <h3 className="font-bold">Current Method: {preferences.learningMethod}</h3>
-                  </div>
-                  <p className={`text-sm mb-2 ${preferences.colorMode === 'pipboy' ? 'text-green-500' : ''}`}>
-                    This app uses the Koch method, which introduces characters one at a time at full speed 
-                    ({preferences.charSpeed} WPM). The spacing between characters is extended to achieve an effective 
-                    speed of {preferences.effectiveSpeed} WPM (Farnsworth timing).
-                  </p>
-                  <p className={`text-sm ${preferences.colorMode === 'pipboy' ? 'text-green-500' : ''}`}>
-                    Research shows this approach is highly effective for developing auditory pattern 
-                    recognition, especially for AuDHD learners who benefit from consistent, structured learning.
-                  </p>
-                </div>
-                
-                <h3 className="font-bold mb-3">Learning Path</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                  {dailyLessons.slice(0, Math.min(dailyLessons.length, 10)).map((lesson) => (
-                    <div 
-                      key={lesson.day} 
-                      className={`flex items-center p-3 rounded-lg ${
-                        lesson.day < currentDay
-                          ? preferences.colorMode === 'pipboy'
-                            ? 'bg-green-900 bg-opacity-30 border border-green-800'
-                            : preferences.colorMode === 'dark' 
-                              ? 'bg-indigo-900 bg-opacity-30' 
-                              : 'bg-indigo-100'
-                          : lesson.day === currentDay
-                            ? preferences.colorMode === 'pipboy'
-                              ? 'bg-green-800 border border-green-500'
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-indigo-800 border border-indigo-500'
-                                : 'bg-indigo-200 border border-indigo-400'
-                            : preferences.colorMode === 'pipboy'
-                              ? 'bg-green-950 border border-green-900 opacity-70'
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 opacity-70'
-                                : 'bg-gray-100 opacity-70'
-                      }`}
-                    >
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mr-3 ${
-                        lesson.day < currentDay
-                          ? preferences.colorMode === 'pipboy'
-                            ? 'bg-green-600 text-black'
-                            : 'bg-green-500 text-white'
-                          : lesson.day === currentDay
-                            ? preferences.colorMode === 'pipboy'
-                              ? 'bg-green-500 text-black'
-                              : 'bg-indigo-600 text-white'
-                            : preferences.colorMode === 'pipboy'
-                              ? 'bg-green-800 text-green-300'
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-600 text-gray-300'
-                                : 'bg-gray-300 text-gray-700'
-                      }`}>
-                        {lesson.day < currentDay ? (
-                          <CheckCircle size={16} aria-hidden="true" />
-                        ) : (
-                          lesson.day
-                        )}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="font-bold">{lesson.title}</div>
-                        <div className="text-sm">
-                          {lesson.description}
-                        </div>
-                      </div>
-                      
-                      <button
-                        onClick={() => {
-                          setCurrentTab('learn');
-                          startLesson(lesson.day);
-                        }}
-                        disabled={lesson.day > currentDay}
-                        className={`ml-2 px-3 py-1 rounded-lg ${
-                          lesson.day <= currentDay
-                            ? getThemeClasses('button')
-                            : preferences.colorMode === 'pipboy'
-                              ? 'bg-green-900 text-green-700 cursor-not-allowed'
-                              : preferences.colorMode === 'dark'
-                                ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                        aria-label={lesson.day < currentDay ? `Review day ${lesson.day}` : 
-                                   lesson.day === currentDay ? `Start day ${lesson.day}` : 
-                                   `Day ${lesson.day} locked`}
-                      >
-                        {lesson.day < currentDay ? 'Review' : lesson.day === currentDay ? 'Start' : 'Locked'}
-                      </button>
-                    </div>
-                  ))}
-                  {dailyLessons.length > 10 && (
-                    <div className="text-center text-sm text-gray-400 py-2">
-                      {dailyLessons.length - 10} more lessons will unlock as you progress
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {currentTab === 'learn' && !currentLesson && (
-            <div className="space-y-6">
-              <div className={`${getThemeClasses('card')} rounded-xl shadow-md p-6`}>
-                <h2 className="text-xl font-bold mb-4">Daily Lessons</h2>
-                
-                <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-                  {dailyLessons.map((lesson) => (
-                    <div 
-                      key={lesson.day} 
-                      className={`border rounded-lg p-4 ${
-                        preferences.colorMode === 'pipboy'
-                          ? 'border-green-700 bg-green-900 bg-opacity-20'
-                          : preferences.colorMode === 'dark' 
-                            ? 'border-gray-700 bg-gray-700' 
-                            : 'border-gray-200 bg-gray-50'
-                      } ${lesson.day > currentDay ? 'opacity-60' : ''}`}>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h3 className="font-bold">Day {lesson.day}: {lesson.title}</h3>
-                          <p className={`text-sm ${
-                            preferences.colorMode === 'pipboy' ? 'text-green-400' : 
-                            preferences.colorMode === 'dark' ? 'text-gray-300' : 'text-gray-600'
-                          }`}>
-                            {lesson.description}
-                          </p>
-                          <div className="flex items-center mt-1 text-sm">
-                            <Clock size={14} className="mr-1" aria-hidden="true" />
-                            <span>{lesson.duration} minutes</span>
-                          </div>
-                        </div>
-                        
-                        <button
-                          onClick={() => startLesson(lesson.day)}
-                          disabled={lesson.day > currentDay}
-                          className={`px-3 py-1 rounded-lg ${
-                            lesson.day <= currentDay 
-                              ? getThemeClasses('button')
-                              : preferences.colorMode === 'pipboy'
-                                ? 'bg-green-900 text-green-700 cursor-not-allowed'
-                                : preferences.colorMode === 'dark'
-                                  ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                  : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          }`}
-                          aria-label={`Start day ${lesson.day} lesson`}
-                        >
-                          {lesson.day <= currentDay ? 'Start' : 'Locked'}
-                        </button>
-                      </div>
