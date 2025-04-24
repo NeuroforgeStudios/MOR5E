@@ -24,26 +24,66 @@ const morseCodeMap = {
   ',': '--..--', '?': '..--..'
 };
 
-// AuDHD-Optimized Learning Sequence
+// AuDHD-Optimized Learning Sequence - exactly as specified in requirements
 const auDHDOptimizedProgression = [
-  'E', 'T', 'A', 'N', // Initial characters with strong contrast
-  'I', 'M', 'S', 'O', // Second group - extending patterns
-  'R', 'K', 'D',      // Third group - building complexity
-  'U', 'G', 'W',      // Fourth group - more complex patterns
-  'H', 'B', 'L',      // Fifth group - extending sequences
-  'F', 'P', 'V',      // Sixth group - internal patterns
-  'J', 'C', 'Y',      // Seventh group - related patterns
-  'Q', 'X', 'Z',      // Final letters - complex patterns
-  '5', '0',           // Numbers part 1 - pattern extremes
-  '1', '9',           // Numbers part 2 - opposites with one change
-  '2', '8',           // Numbers part 3 - opposites with two changes
-  '3', '7',           // Numbers part 4 - opposites with three changes
-  '4', '6',           // Numbers part 5 - opposites with four changes
+  'E',                // The simplest element; foundation building
+  'T',                // Complete contrast to E; reinforces basic elements
+  'A',                // Combines learned elements; high frequency
+  'N',                // Mirror image of A; creates pattern recognition
+  // Review cycle #1
+  'I',                // Pattern extension of E; distinct rhythm
+  'M',                // Pattern extension of T; auditory contrast to I
+  'S',                // Rhythmic progression from I; distinctive pattern
+  'O',                // Rhythmic progression from M; contrasts with S
+  // Review cycle #2
+  'R',                // Symmetric pattern; builds on A
+  'K',                // Mirror of R; creates pattern relationship
+  'D',                // Builds on N; frequent letter
+  // Review cycle #3
+  'U',                // Builds on I; distinctive ending
+  'G',                // Builds on M; opposite ending to U
+  'W',                // Extension of A; distinctive pattern
+  // Review cycle #4
+  'H',                // Pure rhythm; extension of S
+  'B',                // Opposite structure to H
+  'L',                // Complex pattern; high frequency
+  // Review cycle #5
+  'F',                // Internal symmetry; builds on U
+  'P',                // Symmetrical pattern; contrasts with F
+  'V',                // Builds on H; distinctive ending
+  // Review cycle #6
+  'J',                // Extension of W; rhythmic pattern
+  'C',                // Symmetrical pattern; related to K
+  'Y',                // Related to C; distinctive ending
+  // Review cycle #7
+  'Q',                // Complex pattern; less common
+  'X',                // Symmetrical pattern; distinctive sound
+  'Z',                // Final letter; distinctive pattern
+  // Review cycle #8
+  '5', '0',           // Pattern extremes
+  '1', '9',           // Opposites with one element changed
+  '2', '8',           // Opposites with two elements changed
+  '3', '7',           // Opposites with three elements changed
+  '4', '6',           // Opposites with four elements changed
   '.', ',', '?'       // Essential punctuation
 ];
 
-// Define review cycle points - after these indices in the progression
-const reviewPoints = [3, 7, 10, 13, 16, 19, 22, 25, 27, 29, 31, 33, 36];
+// Define review cycle points - exactly matching the specified review points
+const reviewPoints = [
+  3,   // After E,T,A,N
+  7,   // After I,M,S,O
+  10,  // After R,K,D
+  13,  // After U,G,W
+  16,  // After H,B,L
+  19,  // After F,P,V
+  22,  // After J,C,Y
+  25,  // After Q,X,Z
+  27,  // After 5,0
+  29,  // After 1,9
+  31,  // After 2,8
+  33,  // After 3,7
+  36   // After 4,6,.,,,?
+];
 
 // Traditional Koch method progression
 const kochMethodProgression = [
@@ -1137,6 +1177,32 @@ const MorseCodeApp = () => {
         );
         
       case 'character':
+        // Determine character description based on which character it is in the progression
+        let characterDescription = "";
+        if (exercise.char === 'E') {
+          characterDescription = "The simplest element; foundation building - a single dot.";
+        } else if (exercise.char === 'T') {
+          characterDescription = "Complete contrast to E; reinforces basic elements - a single dash.";
+        } else if (exercise.char === 'A') {
+          characterDescription = "Combines learned elements; high frequency - dot followed by dash.";
+        } else if (exercise.char === 'N') {
+          characterDescription = "Mirror image of A; creates pattern recognition - dash followed by dot.";
+        } else if (exercise.char === 'I') {
+          characterDescription = "Pattern extension of E; distinct rhythm - two dots.";
+        } else if (exercise.char === 'M') {
+          characterDescription = "Pattern extension of T; auditory contrast to I - two dashes.";
+        } else if (exercise.char === 'S') {
+          characterDescription = "Rhythmic progression from I; distinctive pattern - three dots.";
+        } else if (exercise.char === 'O') {
+          characterDescription = "Rhythmic progression from M; contrasts with S - three dashes.";
+        } else if (exercise.char === 'R') {
+          characterDescription = "Symmetric pattern; builds on A - dot, dash, dot.";
+        } else if (exercise.char === 'K') {
+          characterDescription = "Mirror of R; creates pattern relationship - dash, dot, dash.";
+        } else if (exercise.char === 'D') {
+          characterDescription = "Builds on N; frequent letter - dash, dot, dot.";
+        }
+      
         return (
           <div className={`${getThemeClasses('card')} rounded-xl p-6 text-center`}>
             <h3 className="text-xl font-bold mb-2">New Character: {exercise.char}</h3>
@@ -1162,6 +1228,14 @@ const MorseCodeApp = () => {
                 />
               ))}
             </div>
+            
+            {characterDescription && (
+              <div className={`${getThemeClasses('panel')} mb-4 p-3 rounded-lg pattern-bg`}>
+                <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-300' : 'text-indigo-200'}`}>
+                  {characterDescription}
+                </p>
+              </div>
+            )}
             
             <p className={`${preferences.colorMode === 'pipboy' ? 'text-green-400' : 'text-gray-200'} mb-6`}>{exercise.mnemonic}</p>
             
